@@ -1,0 +1,12 @@
+{
+  "port": 8765,
+  "wifi": true,
+  "language": "auto",
+  "seconds_per_panel": 15,
+  "github_user": "",
+  "claude": false,
+  "city": "",
+  "country": "",
+  "units": "celsius",
+  "photos_dir": ""
+}
