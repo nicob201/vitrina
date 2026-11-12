@@ -1,6 +1,6 @@
 # vitrina — diseño de la v1
 
-> Estado: **aprobado** · 2026-11-12
+> Estado: **aprobado** · 2026-11-12 · revisión "seguridad y solo macOS" (§8b) aprobada el mismo día
 > La maqueta original (`spike/preview.html`) y las notas de arranque quedaron fuera del repo; lo que importa de ellas está acá.
 
 ## 1. Qué es y por qué
@@ -25,7 +25,9 @@ enchufado, horizontal, y apagado el resto del día.
   dormida, apagada o server cortado → pantalla apagada; vuelve la PC → se prende sola.
 - Se puede **apagar a mano** con el botón de encendido del celu, y la PC no lo vuelve a prender mientras siga ahí.
 - Textos en **castellano e inglés**, según el idioma del celu, con opción para forzarlo.
-- PC con **macOS o Windows**. Server en **Python sin dependencias** (`git clone` + `python server.py`).
+- PC con **macOS** (Windows quedó afuera por ahora, 2026-11-12). Server en **Python sin dependencias**
+  (`git clone` + `python3 server.py`).
+- **Cerrado**: solo la app emparejada ve algo; todo viaja cifrado (HTTPS) y con clave (§8b).
 
 **No-objetivos (después de la v1)**
 
@@ -42,11 +44,15 @@ enchufado, horizontal, y apagado el resto del día.
 - Que instalar el server pida `pip install` o cualquier dependencia.
 - Pantallas feas o "de error": un panel sin datos no aparece; nunca se ve un error técnico en el celu.
 - Que el server sea accesible desde internet. Solo red local.
+- Que algo (página, datos, fotos) se vea sin la clave, o que viaje sin cifrar.
+- Que el server arranque sin que el usuario lo corra. Si algún día hay autoarranque, lo activa el usuario.
 
 ## 3. Restricciones
 
 - **Viewport del Nokia** horizontal a pantalla completa: ~**890 × 396 px CSS**, dpr 1,75. CPU lenta.
-- **Python 3.9+**: es el que trae macOS con las Command Line Tools. Solo biblioteca estándar.
+- **Python 3.9+**: es el que trae macOS con las Command Line Tools. Solo biblioteca estándar. Su `ssl` usa
+  LibreSSL 2.8.3: TLS 1.2 (sin 1.3), suficiente para Android 8+.
+- **`/usr/bin/openssl`** (LibreSSL, viene con macOS) genera el certificado propio.
 - **Las fuentes van dentro del repo** (Big Shoulders Display + Atkinson Hyperlegible Next, ambas OFL, con su
   licencia). El celu no necesita internet.
 - **Endpoint de Claude no documentado** (`api/oauth/usage`): puede cambiar sin aviso. Si se rompe, desaparece
@@ -61,6 +67,9 @@ enchufado, horizontal, y apagado el resto del día.
 | Reparto PC / celu | **(a) la PC calcula todo, el celu pinta**; (b) la PC manda datos crudos y el celu calcula; (c) la PC arma el HTML y el celu recarga | **(a)**. Toda la lógica queda en Python y se testea con `unittest`, sin Node. El Nokia trabaja menos. (c) da parpadeos, pierde los fundidos y el reloj sin PC. |
 | Apagar/prender la pantalla por WiFi | **(a) app Android propia**; (b) Fully Kiosk PLUS (US$11/celu); (c) `adb` inalámbrico | **(a)**. Gratis para la comunidad, sin marca de agua, y sirve para aprender Android. (b) obliga a cada usuario a pagar. (c) Android desactiva la depuración inalámbrica al reiniciar, y el celu se apaga todos los días. |
 | Cómo llegan los datos al celu | **(a) el celu pregunta cada ~30 s**; (b) conexión abierta (SSE) | **(a)**. Más simple y aguanta mejor los cortes de WiFi; "sin conexión" = falló la pregunta. |
+| Plataforma de la PC | (a) macOS y Windows; **(b) solo macOS** | **(b)** (decisión del usuario, 2026-11-12): desarrollo más fluido y macOS trae `openssl`. |
+| Qué tan cerrado | (a) clave; **(b) clave + HTTPS** | **(b)**: nada se lee aunque alguien capture el tráfico de la red. Cuesta generar un certificado propio y que la app lo reconozca. |
+| Cómo la app recibe la clave y reconoce el certificado | **(a) emparejar por cable una vez**; (b) código en pantalla; (c) QR | **(a)**: la confianza se arma por el cable, nadie se mete en el medio y no se tipea nada. (b) es vulnerable en ese primer momento si no se compara bien. (c) Python solo no genera QR. |
 | Qué pasa al prender el celu | **(a) vitrina es la pantalla de inicio**; (b) se abre sola con el permiso "mostrar sobre otras apps"; (c) se abre a mano | **(a)**. Es lo que hacen las apps tipo kiosco y lo más confiable; el celu queda dedicado. (b) Android 10+ lo traba y es frágil. (c) habría que hacerlo todos los días. |
 
 ## 5. Arquitectura
@@ -68,12 +77,12 @@ enchufado, horizontal, y apagado el resto del día.
 Tres piezas:
 
 ```
-PC (macOS / Windows)                              Celu (Android)
+PC (macOS)                                        Celu (Android)
 ┌──────────────────────────────────────┐          ┌──────────────────────────────┐
 │ server.py  (Python, solo stdlib)     │  WiFi o  │ App "vitrina" (Kotlin)       │
 │  ├─ fuentes: GitHub, Claude, clima,  │  cable   │  ├─ WebView a pantalla       │
 │  │   fotos  (hilos con su intervalo) │◄────────►│  │   completa con la página  │
-│  ├─ estado calculado en memoria      │  HTTP    │  └─ control de pantalla:     │
+│  ├─ estado calculado en memoria      │  HTTPS   │  └─ control de pantalla:     │
 │  ├─ GET /api/state  (JSON listo)     │          │      prende / deja apagar    │
 │  ├─ GET /api/photo/<id>              │          │      según responda el server│
 │  └─ sirve la página (web/)           │          └──────────────────────────────┘
@@ -81,8 +90,8 @@ PC (macOS / Windows)                              Celu (Android)
 └──────────────────────────────────────┘
 ```
 
-La página también anda en cualquier navegador (sirve para desarrollar y para probar sin la app); lo único
-que se pierde sin la app es el control de la pantalla.
+La página se ve **solo desde la app emparejada**: con certificado propio y clave, un navegador común no entra
+(§8b). Los tests y las capturas de desarrollo usan la clave.
 
 **Estructura del repo (propuesta):**
 
@@ -125,7 +134,7 @@ se registra en consola, se queda el dato anterior y el server sigue. Ninguna fue
 **Token de Claude** (solo lectura, nunca se renueva):
 - macOS: Keychain, servicio `Claude Code-credentials` vía `security find-generic-password -w`. macOS puede
   pedir permiso la primera vez; el README lo explica.
-- Windows: `~/.claude/.credentials.json`.
+- Si no está en el Keychain: `~/.claude/.credentials.json`.
 - El panel es **opt-in** (`"claude": true` en la config). Si el token venció o falta, se muestra el último dato
   y, si ya pasó la hora de reinicio, 0 %.
 
@@ -246,9 +255,10 @@ App mínima en Kotlin que reemplaza al navegador. Se distribuye como APK en GitH
 instala herramientas de desarrollo.
 
 - **Pantalla principal:** WebView a pantalla completa (modo inmersivo, horizontal fija) con la página del server.
-- **Primera vez:** pide la dirección que imprimió el server (ej. `http://192.168.0.10:8765`). Después prueba
-  primero `http://localhost:<puerto>` (cable) y si no responde usa la de WiFi.
-- **Ajustes:** mantener apretado ~3 s → pantalla para cambiar la dirección o salir.
+- **Primera vez:** sin emparejar, muestra cómo hacerlo ("Enchufá el celu a la Mac y corré `python3 server.py pair`").
+  Ya emparejada, prueba primero `https://localhost:<puerto>` (cable) y si no responde la dirección WiFi que
+  recibió al emparejar.
+- **Ajustes:** mantener apretado ~3 s → pantalla para cambiar la dirección WiFi o salir.
 - **Control de pantalla** (la lógica, como máquina de estados testeable aparte):
   - Server responde → mantiene la pantalla prendida (`FLAG_KEEP_SCREEN_ON`).
   - Server sin responder ~1 min seguido → suelta la pantalla y Android la apaga con su tiempo de espera.
@@ -263,9 +273,56 @@ instala herramientas de desarrollo.
   arranque guía para elegirla como predeterminada. Así se abre sola al prender el celu y el botón de inicio vuelve
   a vitrina. "Salir" (desde ajustes) abre el inicio original de Android.
 - **minSdk 26** (Android 8): cubre la mayoría de los celus viejos que siguen andando.
-- **WebView cerrado** (la página viaja por HTTP sin cifrar; revisión de seguridad 2026-11-12): sin
+- **WebView cerrado** (revisión de seguridad 2026-11-12): sin
   `addJavascriptInterface`, sin acceso a archivos (`allowFileAccess` y `allowContentAccess` en `false`), y la
   navegación queda limitada a la dirección del server configurada; cualquier otro enlace se ignora.
+
+## 8b. Seguridad y emparejamiento (revisión 2026-11-12)
+
+Pedido del usuario: "que sea cerrado, que no se exponga nada", y priorizar siempre la seguridad.
+
+**Modelo.** Solo la app emparejada ve algo. Todo viaja por HTTPS con un certificado propio que la app reconoce por
+su huella (no confía en nadie más), y cada pedido lleva una clave secreta. Sin clave no se sirve nada: ni la
+página, ni los datos, ni las fotos.
+
+**Secretos en la Mac.** En `~/Library/Application Support/vitrina/` (carpeta `0700`, archivos `0600`), nunca en el
+repo ni en `config.json`:
+- `cert.pem` + `key.pem`: certificado propio EC P-256, válido 10 años, generado con `/usr/bin/openssl` la primera
+  vez que se empareja.
+- `secret`: la clave, 32 bytes aleatorios (`secrets.token_urlsafe(32)`).
+
+**Emparejar: `python3 server.py pair`**, con el celu enchufado (depuración USB autorizada) y la app instalada:
+1. Si falta `adb`, el celu o la app, lo dice y termina.
+2. Genera el certificado si no existe y **una clave nueva** (emparejar de nuevo deja afuera a cualquier celu
+   emparejado antes, por ejemplo uno perdido).
+3. Le pasa a la app, por `adb`, la clave, la huella SHA-256 del certificado, el puerto y la IP WiFi actual de la
+   Mac. La pantalla de emparejar de la app solo la puede abrir `adb` (ninguna otra app del celu puede
+   re-emparejarla hacia otro server).
+4. La app muestra "Emparejado"; el server imprime lo mismo y la dirección WiFi.
+5. Si el server estaba corriendo, hay que reiniciarlo para que tome la clave nueva (lo dice al terminar).
+
+**El server.**
+- Sin emparejar, `python3 server.py` no arranca: avisa que primero hay que correr `python3 server.py pair`.
+- Siempre HTTPS (TLS 1.2 o más), también por cable.
+- Cada pedido necesita la clave: cookie `vitrina_key` (la pone la app en el WebView) o header
+  `Authorization: Bearer <clave>` (lo usa el sondeo en segundo plano). Comparación en tiempo constante
+  (`hmac.compare_digest`). Sin clave → `401`, sin nada útil en la respuesta.
+- Siguen: chequeo del `Host`, lista fija de archivos, solo `GET`, timeout de conexiones, `"wifi": false` para
+  solo cable.
+- Nunca arranca solo.
+
+**La app.**
+- El WebView acepta el certificado solo si su huella coincide con la emparejada (`onReceivedSslError`); con
+  cualquier otro, no carga nada y muestra "No es tu Mac".
+- La clave va en la cookie `vitrina_key` (`Secure`, `HttpOnly`, `SameSite=Strict`) para el origen del server
+  (WiFi y `localhost`).
+- El sondeo en segundo plano usa su propio cliente HTTPS con la misma huella fijada y el header `Authorization`.
+- La clave se guarda cifrada con una clave del Android Keystore, en el almacenamiento privado de la app.
+- Si el server responde `401` (se emparejó otro celu o se borró la clave en la Mac), la app muestra "Volvé a
+  emparejar" con la misma explicación del primer arranque.
+
+**Lo que se pierde.** La página ya no se ve en Chrome ni en ningún navegador. Hasta que la app exista, el server
+sigue como en el Plan 1; el cierre del server y la app llegan juntos.
 
 ## 9. Pruebas
 
@@ -283,11 +340,14 @@ instala herramientas de desarrollo.
 
 - **Prender la pantalla desde segundo plano en Android 12**: es lo más incierto. Hacer primero una prueba
   descartable en el Nokia.
-- **Claude:** forma exacta del JSON del Keychain en macOS y la ruta en Windows.
+- **Claude:** forma del JSON del Keychain (confirmada en uso real el 2026-11-12).
 - **GitHub:** formato actual del HTML y zona horaria de los días (afecta "hoy" y la racha).
 - **Fotos grandes** (12 MP) en un CPU lento: el server no puede achicarlas sin dependencias. Medir; si traba,
   el README recomienda fotos de ~1600 px.
-- **adb en Windows:** drivers USB del celu.
+- **Emparejamiento:** que la pantalla de emparejar de la app solo la pueda abrir `adb` (protegida con un permiso
+  que solo tiene el shell, p. ej. `android.permission.DUMP`). Probarlo en el Nokia: otra app no debe poder abrirla.
+- **WebView con certificado propio:** reconocerlo por huella en `onReceivedSslError` y que la cookie con la clave
+  viaje en todos los pedidos (página, `fetch`, fotos). Probarlo en la prueba descartable del Nokia.
 - **Open-Meteo:** confirmar si la atribución alcanza con el README o hay que mostrarla.
 
 ## 11. Lo que queda a criterio de quien construye
