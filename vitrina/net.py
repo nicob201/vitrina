@@ -5,9 +5,21 @@ import socket
 import urllib.request
 
 
+class _KeepTokenHome(urllib.request.HTTPRedirectHandler):
+    """urllib copies Authorization to wherever a redirect points; a token must never leave like that."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if req.has_header("Authorization"):
+            return None  # urllib then raises HTTPError for the 3xx
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_opener = urllib.request.build_opener(_KeepTokenHome)
+
+
 def fetch(url: str, headers: dict[str, str] | None = None, timeout: float = 15) -> bytes:
     request = urllib.request.Request(url, headers={"User-Agent": "vitrina", **(headers or {})})
-    with urllib.request.urlopen(request, timeout=timeout) as response:
+    with _opener.open(request, timeout=timeout) as response:
         return response.read()
 
 

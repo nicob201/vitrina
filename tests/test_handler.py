@@ -1,5 +1,6 @@
 import http.client
 import json
+import socket
 import tempfile
 import threading
 import unittest
@@ -108,6 +109,19 @@ class HandlerTest(unittest.TestCase):
         with mock.patch("mimetypes.guess_type", return_value=("text/plain", None)):
             self.assertTrue(self.get("/a.css")[0].getheader("Content-Type").startswith("text/css"))
             self.assertTrue(self.get("/")[0].getheader("Content-Type").startswith("text/html"))
+
+    def test_idle_connections_are_closed(self):
+        # A client that connects and says nothing must not hold a thread forever.
+        with mock.patch.object(handler, "REQUEST_TIMEOUT", 0.3):
+            s = make_server("127.0.0.1", 0, self.web, lambda a, l: {}, lambda i: None)
+        threading.Thread(target=s.serve_forever, daemon=True).start()
+        try:
+            with socket.create_connection(("127.0.0.1", s.server_address[1])) as sock:
+                sock.settimeout(3)
+                self.assertEqual(sock.recv(1), b"")
+        finally:
+            s.shutdown()
+            s.server_close()
 
     def test_second_server_on_same_port_fails(self):
         with self.assertRaises(OSError):

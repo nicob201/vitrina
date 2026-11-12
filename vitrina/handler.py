@@ -16,6 +16,8 @@ _TYPES = {
     ".woff2": "font/woff2", ".txt": "text/plain", ".json": "application/json",
     ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp",
 }
+# Seconds a client may stay silent before its connection (and thread) is dropped.
+REQUEST_TIMEOUT = 30
 # Requests from the PC itself arrive through `adb reverse`, i.e. over the cable.
 _LOCAL = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
 
@@ -38,6 +40,8 @@ def make_server(
     files["/"] = root / "index.html"
 
     class Handler(BaseHTTPRequestHandler):
+        timeout = REQUEST_TIMEOUT
+
         # Read-only on purpose: only GET is defined, everything else gets 501.
         def do_GET(self) -> None:
             if not _local_host(self.headers.get("Host")):
@@ -74,8 +78,8 @@ def make_server(
                     self.send_header(k, v)
                 self.end_headers()
                 self.wfile.write(body)
-            except ConnectionError:
-                pass  # the phone went away mid-response; nothing to do
+            except OSError:
+                pass  # the client went away or timed out mid-response; nothing to do
 
         def log_message(self, format, *args) -> None:
             pass  # keep the console for things the user needs to see

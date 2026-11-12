@@ -23,6 +23,8 @@ class PhotoLibrary:
             found = {
                 p for p in self._folder.iterdir()
                 if p.suffix.lower() in EXTENSIONS and not p.name.startswith(".") and p.is_file()
+                # foto.jpg -> ~/private.txt would hand that file to the network.
+                and p.resolve().suffix.lower() in EXTENSIONS
             }
         with self._lock:
             if found == set(self._paths):

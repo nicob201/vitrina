@@ -28,6 +28,23 @@ class PhotoLibraryTest(unittest.TestCase):
     def test_only_supported_images(self):
         self.assertEqual(sorted(p.name for p in all_paths(self.lib)), ["B.JPEG", "a.jpg", "c.png", "d.webp"])
 
+    def test_symlink_to_a_non_image_is_ignored(self):
+        # foto.jpg -> some private file must not be served to the network.
+        with tempfile.TemporaryDirectory() as other:
+            secret = Path(other) / "secret.txt"
+            secret.write_text("private")
+            (self.dir / "foto.jpg").symlink_to(secret)
+            self.lib.rescan()
+            self.assertNotIn(self.dir / "foto.jpg", all_paths(self.lib))
+
+    def test_symlink_to_an_image_is_kept(self):
+        with tempfile.TemporaryDirectory() as other:
+            real = Path(other) / "real.png"
+            real.write_bytes(b"")
+            (self.dir / "link.jpg").symlink_to(real)
+            self.lib.rescan()
+            self.assertIn(self.dir / "link.jpg", all_paths(self.lib))
+
     def test_order_is_kept_when_files_do_not_change(self):
         first = all_paths(self.lib)
         self.lib.rescan()

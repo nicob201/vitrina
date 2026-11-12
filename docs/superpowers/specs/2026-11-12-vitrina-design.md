@@ -263,6 +263,9 @@ instala herramientas de desarrollo.
   arranque guía para elegirla como predeterminada. Así se abre sola al prender el celu y el botón de inicio vuelve
   a vitrina. "Salir" (desde ajustes) abre el inicio original de Android.
 - **minSdk 26** (Android 8): cubre la mayoría de los celus viejos que siguen andando.
+- **WebView cerrado** (la página viaja por HTTP sin cifrar; revisión de seguridad 2026-11-12): sin
+  `addJavascriptInterface`, sin acceso a archivos (`allowFileAccess` y `allowContentAccess` en `false`), y la
+  navegación queda limitada a la dirección del server configurada; cualquier otro enlace se ignora.
 
 ## 9. Pruebas
 
