@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ipaddress
 import json
 import mimetypes
 import re
@@ -9,7 +10,12 @@ from pathlib import Path
 from typing import Callable
 from urllib.parse import unquote, urlsplit
 
-_TYPES = {".woff2": "font/woff2", ".js": "text/javascript", ".svg": "image/svg+xml"}
+# Fixed here because Python also reads MIME types from the Windows registry, which can be wrong.
+_TYPES = {
+    ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml",
+    ".woff2": "font/woff2", ".txt": "text/plain", ".json": "application/json",
+    ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp",
+}
 # Requests from the PC itself arrive through `adb reverse`, i.e. over the cable.
 _LOCAL = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
 
@@ -22,10 +28,21 @@ def make_server(
     photo_path: Callable[[int], Path | None],
 ) -> ThreadingHTTPServer:
     root = web_dir.resolve()
+    # The request path never touches the filesystem: only files listed here at startup are served.
+    # (On Windows a path like \\host\share would otherwise make the PC connect to that host.)
+    files = {
+        "/" + p.relative_to(root).as_posix(): p
+        for p in root.rglob("*")
+        if p.is_file() and p.resolve().is_relative_to(root)
+    }
+    files["/"] = root / "index.html"
 
     class Handler(BaseHTTPRequestHandler):
         # Read-only on purpose: only GET is defined, everything else gets 501.
         def do_GET(self) -> None:
+            if not _local_host(self.headers.get("Host")):
+                self._send(403, "text/plain; charset=utf-8", b"forbidden")
+                return
             path = unquote(urlsplit(self.path).path)
             if path == "/api/state":
                 link = "usb" if self.client_address[0] in _LOCAL else "wifi"
@@ -37,12 +54,7 @@ def make_server(
             if photo:
                 self._send_file(photo_path(int(photo.group(1))))
                 return
-            if path.startswith("/api/"):
-                self._send_file(None)
-                return
-            # Static files: only what really lives inside web/ (no "..", no symlinks out).
-            target = (root / ("index.html" if path == "/" else path.lstrip("/"))).resolve()
-            self._send_file(target if target.is_relative_to(root) else None)
+            self._send_file(files.get(path))
 
         def _send_file(self, file: Path | None) -> None:
             if file is None or not file.is_file():
@@ -74,3 +86,17 @@ def make_server(
         allow_reuse_address = sys.platform != "win32"
 
     return Server((host, port), Handler)
+
+
+def _local_host(host: str | None) -> bool:
+    """Accept IP addresses, localhost and .local names; refuse other names (DNS rebinding)."""
+    if not host:
+        return True
+    name = host[1:].split("]")[0] if host.startswith("[") else host.rsplit(":", 1)[0]
+    if name == "localhost" or name.endswith(".local"):
+        return True
+    try:
+        ipaddress.ip_address(name)
+        return True
+    except ValueError:
+        return False

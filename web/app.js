@@ -5,6 +5,9 @@
 const POLL_MS = 30000;
 const POLL_TIMEOUT_MS = 10000;
 const FALLBACK_OFFLINE = { es: 'sin conexión', en: 'offline' };
+const FADE_MS = 1000; // a bit longer than the .9s fade in styles.css
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const $ = (id) => document.getElementById(id);
 const pinned = new URLSearchParams(location.search).get('panel');
@@ -168,7 +171,9 @@ function setPanels(list) {
   if (next.join() === panels.join()) return;
   panels = next;
   $('progress').innerHTML = panels.length > 1 ? panels.map(() => '<span><i></i></span>').join('') : '';
-  go(panels.includes(current) ? current : panels[0]);
+  // Staying on the same panel must not reload it (a photo on screen would jump).
+  if (panels.includes(current)) show(current);
+  else go(panels[0]);
 }
 
 async function go(id) {
@@ -194,7 +199,8 @@ function show(id) {
   document.documentElement.style.setProperty('--dwell', dwell() + 'ms');
   if (panels.length > 1) {
     const following = panels[(k + 1) % panels.length];
-    if (following === 'photos' && id !== 'photos') photoReady = preparePhoto();
+    // Swap the photo only after the photos panel has finished fading out.
+    if (following === 'photos' && id !== 'photos') photoReady = wait(FADE_MS).then(preparePhoto);
     timer = setTimeout(next, dwell());
   }
 }

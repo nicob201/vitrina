@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import errno
+import socket
 import sys
 import threading
 from datetime import datetime
@@ -25,9 +26,9 @@ def log(message: str) -> None:
     print(message, flush=True)
 
 
-def main() -> int:
+def main(root: Path = ROOT) -> int:
     try:
-        cfg, created = load_config(ROOT / "config.json", ROOT / "config.example.json")
+        cfg, created = load_config(root / "config.json", root / "config.example.json")
     except ConfigError as e:
         log(f"config.json: {e}")
         return 1
@@ -42,13 +43,16 @@ def main() -> int:
         return build_state(store, cfg, lang, link, datetime.now().astimezone(), photos.count())
 
     # Bind first: if the port is taken, say so before anything else starts.
+    # macOS lets us bind 0.0.0.0 next to another app's 127.0.0.1 on the same port, so check that too.
+    in_use = f'Port {cfg.port} is already in use. Change "port" in config.json.'
+    if _answers_on_localhost(cfg.port):
+        log(in_use)
+        return 1
     try:
-        server = make_server("0.0.0.0" if cfg.wifi else "127.0.0.1", cfg.port, ROOT / "web", get_state, photos.path)
+        server = make_server("0.0.0.0" if cfg.wifi else "127.0.0.1", cfg.port, root / "web", get_state, photos.path)
     except OSError as e:
-        if e.errno in _PORT_IN_USE:
-            log(f'Port {cfg.port} is already in use. Change "port" in config.json.')
-            return 1
-        raise
+        log(in_use if e.errno in _PORT_IN_USE else f"Can't use port {cfg.port}: {e.strerror or e}")
+        return 1
 
     stop = threading.Event()
     _start_sources(cfg, store, photos, stop)
@@ -67,6 +71,14 @@ def main() -> int:
         stop.set()
         server.server_close()
     return 0
+
+
+def _answers_on_localhost(port: int) -> bool:
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=0.5):
+            return True
+    except OSError:
+        return False
 
 
 def _start_sources(cfg, store: Store, photos: PhotoLibrary, stop: threading.Event) -> None:

@@ -60,6 +60,13 @@ place it found for your city, so you can check it picked the right one.
 **Over Wi‑Fi.** Open the `WiFi:` address in Chrome on the phone and tap the screen once to go full
 screen. Tip: give your computer a fixed IP in your router so the address doesn't change.
 
+- **Keep the screen on:** over Wi‑Fi, Chrome isn't allowed to keep the screen awake. On the phone, turn on
+  Developer options → **Stay awake** (the screen stays on while charging).
+- **Windows:** the first time, the firewall asks about Python. Allow it on **private networks**, or the
+  phone won't reach it.
+- **macOS with Python from python.org:** run *Install Certificates.command* once (in the Python folder
+  under Applications), or GitHub, Claude and the weather can't connect.
+
 **Over the cable.** Install [adb](https://developer.android.com/tools/releases/platform-tools), turn on
 USB debugging on the phone and plug it in. The server notices (`USB: phone connected`) and sets up the
 connection by itself; open `http://localhost:8765` on the phone.

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import math
 import subprocess
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # Undocumented endpoint behind Claude Code's /usage. If it changes, the panel just disappears.
@@ -48,11 +48,12 @@ def _window(raw) -> dict | None:
     if not isinstance(raw, dict) or raw.get("utilization") is None:
         return None
     resets = raw.get("resets_at")
-    return {
-        "pct": float(raw["utilization"]),
-        # Python 3.9's fromisoformat doesn't take a trailing Z.
-        "resets_at": datetime.fromisoformat(resets.replace("Z", "+00:00")) if resets else None,
-    }
+    if resets:
+        # Python 3.9's fromisoformat doesn't take a trailing Z; a time with no zone is taken as UTC.
+        resets = datetime.fromisoformat(resets.replace("Z", "+00:00"))
+        if resets.tzinfo is None:
+            resets = resets.replace(tzinfo=timezone.utc)
+    return {"pct": float(raw["utilization"]), "resets_at": resets or None}
 
 
 def claude_view(usage: dict, now: datetime) -> dict:

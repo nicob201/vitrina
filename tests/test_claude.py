@@ -44,6 +44,10 @@ class UsageTest(unittest.TestCase):
         usage = parse_usage({"five_hour": {"utilization": 3.5, "resets_at": None}})
         self.assertEqual(claude_view(usage, NOW)["session"], {"pct": 4, "resets_at": None})
 
+    def test_reset_time_without_timezone_is_utc(self):
+        usage = parse_usage({"five_hour": {"utilization": 10, "resets_at": "2026-11-12T14:00:00"}})
+        self.assertEqual(claude_view(usage, NOW)["session"], {"pct": 10, "resets_at": "2026-11-12T14:00:00+00:00"})
+
     def test_request(self):
         self.assertEqual(USAGE_URL, "https://api.anthropic.com/api/oauth/usage")
         self.assertEqual(

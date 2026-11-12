@@ -60,6 +60,13 @@ encontró para tu ciudad, así ves que eligió el correcto.
 **Por WiFi.** Abrí la dirección `WiFi:` en Chrome del celu y tocá la pantalla una vez para pasar a
 pantalla completa. Consejo: fijá la IP de tu computadora en el router para que la dirección no cambie.
 
+- **Que la pantalla no se apague:** por WiFi, Chrome no tiene permitido mantener la pantalla prendida. En
+  el celu, activá Opciones de desarrollador → **Pantalla activa** (queda prendida mientras carga).
+- **Windows:** la primera vez, el firewall pregunta por Python. Permitilo en **redes privadas**, o el
+  celu no lo va a encontrar.
+- **macOS con Python de python.org:** corré una vez *Install Certificates.command* (en la carpeta de
+  Python dentro de Aplicaciones), o GitHub, Claude y el clima no van a poder conectarse.
+
 **Por cable.** Instalá [adb](https://developer.android.com/tools/releases/platform-tools), activá la
 depuración USB en el celu y enchufalo. El server se da cuenta (`USB: phone connected`) y arma la conexión
 solo; abrí `http://localhost:8765` en el celu.

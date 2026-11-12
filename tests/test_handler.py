@@ -90,6 +90,25 @@ class HandlerTest(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertEqual(self.get(path)[0].status, 404)
 
+    def test_windows_style_and_nul_paths_404(self):
+        # On Windows a path like \\host\share would make the PC reach out to that host.
+        for raw in ("/%5C%5C127.0.0.1%5Cx", "/%00", "/a.css%00", "/C:%5Cwindows", "/%5Ca.css"):
+            with self.subTest(raw=raw):
+                self.assertEqual(self.get(raw)[0].status, 404)
+
+    def test_foreign_host_names_are_refused(self):
+        # DNS rebinding: a web page on evil.example pointing its name at this PC.
+        self.assertEqual(self.get("/api/state", {"Host": "evil.example:8765"})[0].status, 403)
+        for host in ("localhost:8765", "127.0.0.1:8765", "192.168.0.10:8765", "[::1]:8765", "mi-mac.local:8765"):
+            with self.subTest(host=host):
+                self.assertEqual(self.get("/api/state", {"Host": host})[0].status, 200)
+
+    def test_content_types_do_not_depend_on_the_system(self):
+        # Python reads MIME types from the Windows registry, which can say text/plain for .css.
+        with mock.patch("mimetypes.guess_type", return_value=("text/plain", None)):
+            self.assertTrue(self.get("/a.css")[0].getheader("Content-Type").startswith("text/css"))
+            self.assertTrue(self.get("/")[0].getheader("Content-Type").startswith("text/html"))
+
     def test_second_server_on_same_port_fails(self):
         with self.assertRaises(OSError):
             make_server("127.0.0.1", self.server.server_address[1], self.web, lambda a, l: {}, lambda i: None)

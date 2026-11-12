@@ -34,7 +34,10 @@ def load_config(path: Path, example: Path) -> tuple[Config, bool]:
     if created:
         shutil.copyfile(example, path)
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        # utf-8-sig also accepts the byte-order mark some Windows editors add.
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+    except UnicodeDecodeError:
+        raise ConfigError("save the file as UTF-8 (accents and ñ need it)") from None
     except json.JSONDecodeError as e:
         raise ConfigError(f"invalid JSON at line {e.lineno}") from None
     if not isinstance(data, dict):

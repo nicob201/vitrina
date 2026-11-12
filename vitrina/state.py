@@ -28,31 +28,47 @@ class Store:
 def build_state(
     store: Store, config: Config, lang: str, link: str, now: datetime, photo_count: int
 ) -> dict:
-    """Everything the page needs, ready to paint. Panels without data are left out."""
-    weather = store.get("weather")
+    """Everything the page needs, ready to paint. Panels without data are left out,
+    and so is a panel whose data turns out to be broken: the rest of the page keeps working."""
     state = {
         "lang": lang,
         "link": link,
         "seconds_per_panel": config.seconds_per_panel,
         "strings": STRINGS[lang],
         "panels": ["clock"],
-        "clock": {
-            "weather": dict(weather, label=STRINGS[lang]["weather_" + weather["condition"]]) if weather else None,
-        },
+        "clock": {"weather": _safe(lambda: _weather(store.get("weather"), lang))},
     }
 
     days = store.get("github_days")
     if config.github_user and days:
-        state["panels"].append("github")
-        state["github"] = github_view(days, now.date())
+        _add(state, "github", lambda: github_view(days, now.date()))
 
     usage = store.get("claude_usage")
     if config.claude and usage and (usage.get("session") or usage.get("week")):
-        state["panels"].append("claude")
-        state["claude"] = claude_view(usage, now)
+        _add(state, "claude", lambda: claude_view(usage, now))
 
     if photo_count:
         state["panels"].append("photos")
         state["photos"] = [f"/api/photo/{i}" for i in range(photo_count)]
 
     return state
+
+
+def _weather(weather: dict | None, lang: str) -> dict | None:
+    if not weather:
+        return None
+    return dict(weather, label=STRINGS[lang]["weather_" + weather["condition"]])
+
+
+def _add(state: dict, panel: str, view) -> None:
+    value = _safe(view)
+    if value is not None:
+        state["panels"].append(panel)
+        state[panel] = value
+
+
+def _safe(build):
+    try:
+        return build()
+    except Exception:  # e.g. the undocumented Claude API changing shape
+        return None

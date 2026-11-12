@@ -49,6 +49,16 @@ class LoadConfigTest(unittest.TestCase):
         with self.assertRaisesRegex(ConfigError, "line 3"):
             load_config(self.path, EXAMPLE)
 
+    def test_non_utf8_file_says_so(self):
+        self.path.write_bytes('{"city": "Córdoba"}'.encode("latin-1"))
+        with self.assertRaisesRegex(ConfigError, "UTF-8"):
+            load_config(self.path, EXAMPLE)
+
+    def test_utf8_with_bom_is_accepted(self):
+        self.path.write_bytes(b"\xef\xbb\xbf" + '{"city": "Córdoba"}'.encode("utf-8"))
+        cfg, _ = load_config(self.path, EXAMPLE)
+        self.assertEqual(cfg.city, "Córdoba")
+
     def test_top_level_must_be_an_object(self):
         self.write("[]")
         with self.assertRaises(ConfigError):

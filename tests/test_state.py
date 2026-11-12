@@ -61,6 +61,14 @@ class BuildStateTest(unittest.TestCase):
         self.assertNotIn("github", s["panels"])
         self.assertNotIn("github", s)
 
+    def test_broken_panel_data_drops_only_that_panel(self):
+        store = full_store()
+        store.set("github_days", ["not a day"])
+        store.set("weather", {"condition": "volcano"})
+        s = build_state(store, FULL, "es", "usb", NOW, 0)
+        self.assertEqual(s["panels"], ["clock", "claude"])
+        self.assertIsNone(s["clock"]["weather"])
+
     def test_state_is_json_serializable(self):
         json.dumps(build_state(full_store(), FULL, "es", "usb", NOW, 2))
 
