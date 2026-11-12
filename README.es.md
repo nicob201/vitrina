@@ -82,7 +82,7 @@ los últimos datos y aparece "sin conexión" hasta que vuelva.
 Viene apagado. Con `"claude": true`, el server lee el login que **Claude Code** ya guarda en esta
 computadora y le pregunta a Anthropic tu uso cada 5 minutos:
 
-- En macOS el login está en el Llavero; la primera vez, macOS te pregunta si lo permitís.
+- En macOS el login está en el Llavero; macOS puede preguntarte una vez si lo permitís.
 - En Windows se lee de `~/.claude/.credentials.json`.
 - El token **nunca sale de tu computadora** y nunca se renueva (renovarlo podría cerrarte la sesión de
   Claude Code). Al celu solo van porcentajes y horarios de reinicio.

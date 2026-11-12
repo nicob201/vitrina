@@ -123,8 +123,8 @@ se registra en consola, se queda el dato anterior y el server sigue. Ninguna fue
 | Fotos | Carpeta de la config (jpg, jpeg, png, webp) | 1 min | Lista en orden mezclado; pasan todas antes de repetir |
 
 **Token de Claude** (solo lectura, nunca se renueva):
-- macOS: Keychain, servicio `Claude Code-credentials` vía `security find-generic-password -w`. La primera vez
-  macOS pide permiso; el README lo explica.
+- macOS: Keychain, servicio `Claude Code-credentials` vía `security find-generic-password -w`. macOS puede
+  pedir permiso la primera vez; el README lo explica.
 - Windows: `~/.claude/.credentials.json`.
 - El panel es **opt-in** (`"claude": true` en la config). Si el token venció o falta, se muestra el último dato
   y, si ya pasó la hora de reinicio, 0 %.
@@ -202,7 +202,7 @@ progreso abajo, `prefers-reduced-motion` respetado, zoom bloqueado.
 └──────────────────────────────────────────────┘
 ```
 
-  Íconos de clima propios en SVG, en el estilo de la maqueta (trazo, colores `--moon` / `--lamp`), con
+  Íconos de clima propios en SVG, en el estilo de la maqueta (trazo, colores `--moon` / `--sun`), con
   variante de noche para despejado y parcialmente nublado. Sin clima, el panel queda como la maqueta.
 - **GitHub y Claude:** como la maqueta. El "se reinicia en 2 h 13 min" lo actualiza el celu a partir de
   `resets_at`, para que siga bien aunque se corte la PC.
@@ -216,7 +216,8 @@ progreso abajo, `prefers-reduced-motion` respetado, zoom bloqueado.
 
 La maqueta con datos falsos se aprobó; **el panel de Claude es el favorito**: mantener ese estilo.
 
-Concepto: **"escritorio de noche"**. Los commits son ventanas iluminadas de un edificio de noche.
+Concepto: **"escritorio de noche"**: fondo índigo profundo y texto claro. Dos paneles llevan los colores de su
+marca (pedido del usuario, 2026-11-12): GitHub con sus verdes y Claude con su paleta cálida.
 
 | Token | Valor | Uso |
 |---|---|---|
@@ -225,12 +226,15 @@ Concepto: **"escritorio de noche"**. Los commits son ventanas iluminadas de un e
 | `--haze` | `#3A4475` | Líneas, progreso inactivo, los dos puntos del reloj |
 | `--mist` | `#9AA1C7` | Texto secundario |
 | `--moon` | `#F1F2FA` | Texto principal, relleno de las barras |
-| `--lamp-1..4` | `#5E4B2A` `#9C7330` `#D99A33` `#FFCF6E` | Escala ámbar de GitHub (de apagado a brillante). Único color fuerte |
+| `--leaf-1..4` | `#0E4429` `#006D32` `#26A641` `#39D353` | Verdes de GitHub (modo oscuro), de apagado a brillante. Los días sin actividad quedan en `--dusk` |
+| `--claude` | `#D97757` | Naranja de Claude: números y barras del panel de Claude |
+| `--claude-bg` / `--claude-text` / `--claude-mist` / `--claude-track` | `#262624` `#FAF9F5` `#B7B5A9` `#3D3D3A` | Panel de Claude: fondo cálido, texto, texto secundario, parte vacía de las barras |
+| `--sun` | `#D99A33` | Sol y rayo de los íconos del clima |
 
 - Tipografías: **Big Shoulders Display** (números grandes; angosta y alta, entra bien en pantalla ancha y baja)
   + **Atkinson Hyperlegible Next** (textos; diseñada para leerse de un vistazo). Ambas OFL → van **dentro del repo** (sin depender de internet), no desde Google Fonts.
 - Claude: barra semanal con una **marca de ritmo** (% de la semana transcurrida). Si la barra la pasa,
-  vas por encima del ritmo.
+  vas por encima del ritmo. La marca va en marfil sobre el naranja.
 - Sin mayúsculas sostenidas en labels, sin decoración innecesaria; el movimiento es solo el fundido entre
   paneles y la barra de progreso (respetando `prefers-reduced-motion`).
 - Viewport real del Nokia en horizontal a pantalla completa: **~890 × 396 px CSS** (dpr 1,75).

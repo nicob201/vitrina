@@ -17,12 +17,18 @@
   --haze:  #3A4475;  /* hairlines, idle progress, the clock's colon */
   --mist:  #9AA1C7;  /* secondary text */
   --moon:  #F1F2FA;  /* primary text, meter fill */
-  /* one hue, dim -> bright: commits as lit windows. The only strong colour. */
-  --lamp-1: #5E4B2A;
-  --lamp-2: #9C7330;
-  --lamp-3: #D99A33;
-  --lamp-4: #FFCF6E;
-  --sun: var(--lamp-3);
+  --sun: #D99A33;     /* weather icons: sun and lightning */
+  /* GitHub's own contribution greens (dark theme), dim -> bright */
+  --leaf-1: #0E4429;
+  --leaf-2: #006D32;
+  --leaf-3: #26A641;
+  --leaf-4: #39D353;
+  /* Claude's own palette, used only on its panel */
+  --claude: #D97757;       /* orange: numbers and bars */
+  --claude-bg: #262624;    /* warm dark background */
+  --claude-text: #FAF9F5;  /* ivory */
+  --claude-mist: #B7B5A9;  /* secondary text */
+  --claude-track: #3D3D3A; /* empty part of the bars */
   --display: "Big Shoulders Display", "Arial Narrow", sans-serif;
   --text: "Atkinson Hyperlegible Next", system-ui, sans-serif;
   --pad-x: 4.5vw;
@@ -105,25 +111,33 @@ body.offline .offline-note { display: inline-flex; }
 .grid i { aspect-ratio: 1; border-radius: 2px; background: var(--dusk); }
 .grid i.pad { visibility: hidden; }
 .l0 { background: var(--dusk) !important; }
-.l1 { background: var(--lamp-1) !important; }
-.l2 { background: var(--lamp-2) !important; }
-.l3 { background: var(--lamp-3) !important; }
-.l4 { background: var(--lamp-4) !important; }
+.l1 { background: var(--leaf-1) !important; }
+.l2 { background: var(--leaf-2) !important; }
+.l3 { background: var(--leaf-3) !important; }
+.l4 { background: var(--leaf-4) !important; }
 .key { display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin-top: 1.6vh; font-size: 3vh; color: var(--mist); }
 .key i { width: 11px; height: 11px; border-radius: 2px; }
 .key span { margin: 0 6px; }
 
-/* ---------- claude ---------- */
+/* ---------- claude: its own warm palette ---------- */
+.claude { background: var(--claude-bg); color: var(--claude-text); }
+.claude .label, .claude .note, .claude .pct small { color: var(--claude-mist) !important; }
+.claude .pct { color: var(--claude); }
+.claude .track { background: var(--claude-track); }
+.claude .track .pace, .claude .note .tick { background: var(--claude-text); }
+body[data-panel="claude"] .link { color: var(--claude-mist); }
+body[data-panel="claude"] .progress span { background: var(--claude-track); }
+body[data-panel="claude"] .progress span i { background: var(--claude-mist); }
 .claude .meters { margin: auto 0; }
 .meters { display: grid; grid-template-columns: 1fr 1fr; gap: 7vw; }
 .meter .label { font-size: 4.2vh; color: var(--mist); }
 .meter .pct { display: block; margin: 1.5vh 0 3vh; font-family: var(--display); font-weight: 700; font-size: 26vh; line-height: .8; font-variant-numeric: tabular-nums; }
 .meter .pct small { font-size: .45em; font-weight: 500; color: var(--mist); margin-left: .08em; }
 .track { position: relative; height: 12px; border-radius: 4px; background: var(--dusk); }
-.track .fill { height: 100%; width: var(--v, 0%); border-radius: 4px; background: var(--moon); }
-.track .pace { position: absolute; left: var(--v); top: -7px; bottom: -7px; width: 2px; margin-left: -1px; background: var(--lamp-3); border-radius: 1px; }
+.track .fill { height: 100%; width: var(--v, 0%); border-radius: 4px; background: var(--claude); }
+.track .pace { position: absolute; left: var(--v); top: -7px; bottom: -7px; width: 2px; margin-left: -1px; background: var(--moon); border-radius: 1px; }
 .note { margin-top: 2.6vh; font-size: 3.8vh; color: var(--mist); line-height: 1.35; min-height: 1.35em; }
-.note .tick { display: inline-block; width: 2px; height: .9em; margin-right: .5em; vertical-align: -.1em; background: var(--lamp-3); }
+.note .tick { display: inline-block; width: 2px; height: .9em; margin-right: .5em; vertical-align: -.1em; background: var(--moon); }
 
 /* ---------- photos ---------- */
 .photo { padding: 0; overflow: hidden; }

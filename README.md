@@ -82,7 +82,7 @@ data stays on screen and an "offline" mark appears until it's back.
 Off by default. With `"claude": true`, the server reads the login that **Claude Code** already keeps on
 this computer and asks Anthropic for your usage every 5 minutes:
 
-- On macOS the login lives in the Keychain; the first time, macOS asks whether to allow it.
+- On macOS the login lives in the Keychain; macOS may ask once whether to allow it.
 - On Windows it's read from `~/.claude/.credentials.json`.
 - The token **never leaves your computer** and is never refreshed (refreshing could log Claude Code
   out). Only percentages and reset times go to the phone.
