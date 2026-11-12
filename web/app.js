@@ -62,6 +62,99 @@ const renderers = {
   },
 };
 
+renderers.github = (s) => {
+  const g = s.github;
+  const num = new Intl.NumberFormat(s.lang);
+  const month = new Intl.DateTimeFormat(s.lang, { month: 'short' });
+  $('gh-title').textContent = t('github_title');
+  $('gh-total').textContent = num.format(g.total);
+  $('gh-total-label').textContent = t('github_total');
+  $('gh-streak').textContent = num.format(g.streak);
+  $('gh-streak-label').textContent = t('github_streak');
+  $('gh-today').textContent = num.format(g.today);
+  $('gh-today-label').textContent = t('github_today');
+  $('gh-less').textContent = t('github_less');
+  $('gh-more').textContent = t('github_more');
+  $('github').style.setProperty('--weeks', g.weeks.length);
+  $('gh-months').innerHTML = g.months
+    .map((m) => `<span style="grid-column:${m.week + 1}">${month.format(new Date(2000, m.month - 1, 1)).replace('.', '')}</span>`)
+    .join('');
+  $('gh-grid').innerHTML = g.weeks
+    .map((week) => week.map((l) => (l === null ? '<i class="pad"></i>' : `<i class="l${l}"></i>`)).join(''))
+    .join('');
+};
+
+renderers.claude = (s) => {
+  const c = s.claude;
+  $('claude-title').textContent = t('claude_title');
+  $('claude-session-label').textContent = t('claude_session');
+  $('claude-week-label').textContent = t('claude_week');
+  for (const [name, w] of [['session', c.session], ['week', c.week]]) {
+    $(`claude-${name}`).hidden = !w;
+    if (!w) continue;
+    $(`claude-${name}-pct`).textContent = w.pct;
+    $(`claude-${name}-fill`).style.setProperty('--v', `${Math.min(w.pct, 100)}%`);
+  }
+  const pace = c.week && c.week.elapsed_pct !== null;
+  $('claude-week-pace').hidden = !pace;
+  $('claude-week-pace-note').hidden = !pace;
+  if (pace) {
+    $('claude-week-pace').style.setProperty('--v', `${c.week.elapsed_pct}%`);
+    $('claude-week-elapsed').textContent = t('claude_week_elapsed', { pct: c.week.elapsed_pct });
+  }
+  claudeNotes(new Date());
+};
+
+// Reset notes count down on the phone, so they stay right even if the PC goes away.
+function claudeNotes(now) {
+  const c = state && state.claude;
+  if (!c) return;
+  if (c.session) {
+    const at = c.session.resets_at && new Date(c.session.resets_at);
+    $('claude-session-note').textContent = at && at > now ? t('claude_resets_in', { duration: duration(at - now) }) : '';
+  }
+  if (c.week) {
+    const at = c.week.resets_at && new Date(c.week.resets_at);
+    $('claude-week-note').textContent = at && at > now
+      ? t('claude_resets_on', {
+          weekday: new Intl.DateTimeFormat(state.lang, { weekday: 'long' }).format(at),
+          time: new Intl.DateTimeFormat(state.lang, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(at),
+        })
+      : '';
+  }
+}
+
+function duration(ms) {
+  const minutes = Math.ceil(ms / 60000);
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h ? t('duration_hm', { h, m }) : t('duration_m', { m });
+}
+
+// ---------- photos ----------
+let photoIndex = -1;
+let photoReady = null;
+
+// Decode the next photo before its panel shows, so it fades in whole.
+async function preparePhoto() {
+  const list = (state && state.photos) || [];
+  if (!list.length) return false;
+  photoIndex = (photoIndex + 1) % list.length;
+  // Decode the very <img> elements that get shown; a separate Image() would be decoded twice.
+  const main = $('photo-main');
+  const back = $('photo-back');
+  main.src = back.src = list[photoIndex];
+  try {
+    await main.decode();
+    const portrait = main.naturalHeight > main.naturalWidth;
+    $('photos').classList.toggle('portrait', portrait);
+    if (portrait) await back.decode();
+  } catch (e) {
+    return false;
+  }
+  return true;
+}
+
 function render() {
   document.documentElement.lang = state.lang;
   for (const id of state.panels) if (renderers[id]) renderers[id](state);
@@ -75,7 +168,17 @@ function setPanels(list) {
   if (next.join() === panels.join()) return;
   panels = next;
   $('progress').innerHTML = panels.length > 1 ? panels.map(() => '<span><i></i></span>').join('') : '';
-  show(panels.includes(current) ? current : panels[0]);
+  go(panels.includes(current) ? current : panels[0]);
+}
+
+async function go(id) {
+  if (id === 'photos') {
+    const ok = await (photoReady || preparePhoto());
+    photoReady = null;
+    // A photo that won't load skips its turn instead of showing an empty panel.
+    if (!ok && panels.length > 1) id = panels[(panels.indexOf('photos') + 1) % panels.length];
+  }
+  show(id);
 }
 
 function show(id) {
@@ -89,7 +192,11 @@ function show(id) {
   });
   clearTimeout(timer);
   document.documentElement.style.setProperty('--dwell', dwell() + 'ms');
-  if (panels.length > 1) timer = setTimeout(next, dwell());
+  if (panels.length > 1) {
+    const following = panels[(k + 1) % panels.length];
+    if (following === 'photos' && id !== 'photos') photoReady = preparePhoto();
+    timer = setTimeout(next, dwell());
+  }
 }
 
 function dwell() {
@@ -97,11 +204,11 @@ function dwell() {
 }
 
 function next() {
-  show(panels[(panels.indexOf(current) + 1) % panels.length]);
+  go(panels[(panels.indexOf(current) + 1) % panels.length]);
 }
 
 // ---------- clock ----------
-const tickers = [];
+const tickers = [claudeNotes];
 
 function tick() {
   const d = new Date();

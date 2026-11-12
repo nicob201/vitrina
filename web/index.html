@@ -24,9 +24,42 @@
   </div>
 </section>
 
-<section class="panel gh" id="github"></section>
-<section class="panel claude" id="claude"></section>
-<section class="panel photo" id="photos"></section>
+<section class="panel gh" id="github">
+  <h2 id="gh-title"></h2>
+  <div class="stats">
+    <div class="stat"><b id="gh-total"></b><span id="gh-total-label"></span></div>
+    <div class="stat"><b id="gh-streak"></b><span id="gh-streak-label"></span></div>
+    <div class="stat"><b id="gh-today"></b><span id="gh-today-label"></span></div>
+  </div>
+  <div>
+    <div class="months" id="gh-months"></div>
+    <div class="grid" id="gh-grid"></div>
+    <div class="key"><span id="gh-less"></span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i><span id="gh-more"></span></div>
+  </div>
+</section>
+
+<section class="panel claude" id="claude">
+  <h2 id="claude-title"></h2>
+  <div class="meters">
+    <div class="meter" id="claude-session">
+      <span class="label" id="claude-session-label"></span>
+      <b class="pct"><span id="claude-session-pct"></span><small>%</small></b>
+      <div class="track"><div class="fill" id="claude-session-fill"></div></div>
+      <p class="note" id="claude-session-note"></p>
+    </div>
+    <div class="meter" id="claude-week">
+      <span class="label" id="claude-week-label"></span>
+      <b class="pct"><span id="claude-week-pct"></span><small>%</small></b>
+      <div class="track"><div class="fill" id="claude-week-fill"></div><i class="pace" id="claude-week-pace"></i></div>
+      <p class="note"><span id="claude-week-note"></span><span class="pace-note" id="claude-week-pace-note"><br><span class="tick"></span><span id="claude-week-elapsed"></span></span></p>
+    </div>
+  </div>
+</section>
+
+<section class="panel photo" id="photos">
+  <img class="back" id="photo-back" alt="">
+  <img class="main" id="photo-main" alt="">
+</section>
 
 <div class="progress" id="progress"></div>
 
