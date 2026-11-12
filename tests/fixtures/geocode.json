@@ -1,0 +1,4 @@
+{"results": [
+  {"name": "Berlín", "latitude": 52.52437, "longitude": 13.41053, "country_code": "DE", "admin1": "Estado de Berlín", "country": "Alemania"},
+  {"name": "Berlin", "latitude": 44.46867, "longitude": -71.18508, "country_code": "US", "admin1": "New Hampshire", "country": "Estados Unidos"}
+], "generationtime_ms": 0.6}
