@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import mimetypes
 import re
+import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Callable
@@ -67,4 +68,9 @@ def make_server(
         def log_message(self, format, *args) -> None:
             pass  # keep the console for things the user needs to see
 
-    return ThreadingHTTPServer((host, port), Handler)
+    class Server(ThreadingHTTPServer):
+        # On Windows SO_REUSEADDR lets a second server silently share the port;
+        # elsewhere it only allows a quick restart after Ctrl+C.
+        allow_reuse_address = sys.platform != "win32"
+
+    return Server((host, port), Handler)

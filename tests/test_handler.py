@@ -4,7 +4,9 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from unittest import mock
 
+from vitrina import handler
 from vitrina.handler import make_server
 
 
@@ -87,6 +89,17 @@ class HandlerTest(unittest.TestCase):
         for path in ("/nope.js", "/fonts", "/fonts/"):
             with self.subTest(path=path):
                 self.assertEqual(self.get(path)[0].status, 404)
+
+    def test_second_server_on_same_port_fails(self):
+        with self.assertRaises(OSError):
+            make_server("127.0.0.1", self.server.server_address[1], self.web, lambda a, l: {}, lambda i: None)
+
+    def test_windows_does_not_share_the_port(self):
+        # On Windows SO_REUSEADDR lets a second server silently bind the same port.
+        with mock.patch.object(handler.sys, "platform", "win32"):
+            s = make_server("127.0.0.1", 0, self.web, lambda a, l: {}, lambda i: None)
+        s.server_close()
+        self.assertFalse(s.allow_reuse_address)
 
 
 if __name__ == "__main__":
