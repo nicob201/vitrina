@@ -1,0 +1,99 @@
+@font-face {
+  font-family: "Big Shoulders Display";
+  src: url(fonts/big-shoulders-display.woff2) format("woff2");
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  src: url(fonts/atkinson-hyperlegible-next.woff2) format("woff2");
+  font-weight: 200 800;
+  font-display: block;
+}
+
+:root {
+  --night: #1A2142;  /* background: deep indigo, reads rich on LCD where pure black goes grey */
+  --dusk:  #262F59;  /* empty cells, meter track */
+  --haze:  #3A4475;  /* hairlines, idle progress, the clock's colon */
+  --mist:  #9AA1C7;  /* secondary text */
+  --moon:  #F1F2FA;  /* primary text, meter fill */
+  /* one hue, dim -> bright: commits as lit windows. The only strong colour. */
+  --lamp-1: #5E4B2A;
+  --lamp-2: #9C7330;
+  --lamp-3: #D99A33;
+  --lamp-4: #FFCF6E;
+  --sun: var(--lamp-3);
+  --display: "Big Shoulders Display", "Arial Narrow", sans-serif;
+  --text: "Atkinson Hyperlegible Next", system-ui, sans-serif;
+  --pad-x: 4.5vw;
+}
+
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; }
+html, ::backdrop { background: var(--night); }
+body {
+  background: var(--night);
+  color: var(--moon);
+  font-family: var(--text);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+[hidden] { display: none !important; }
+
+.panel {
+  position: absolute; inset: 0;
+  padding: 7vh var(--pad-x) 11vh;
+  display: flex; flex-direction: column;
+  opacity: 0; transition: opacity .9s ease;
+  pointer-events: none;
+}
+.panel.on { opacity: 1; }
+
+h2 { font-weight: 700; font-size: 4.6vh; letter-spacing: .01em; }
+
+/* persistent corner: small clock + connection */
+.corner {
+  position: fixed; top: 6vh; right: var(--pad-x); z-index: 2;
+  display: flex; align-items: baseline; gap: 1.6vw;
+  transition: opacity .9s ease;
+}
+.corner .t { font-family: var(--display); font-weight: 500; font-size: 7.5vh; line-height: 1; font-variant-numeric: tabular-nums; }
+.link { font-size: 3.2vh; color: var(--mist); display: inline-flex; align-items: center; gap: .5em; }
+.link::before { content: ""; width: .5em; height: .5em; border-radius: 50%; background: var(--moon); }
+body.offline .link::before { background: var(--haze); }
+body[data-panel="clock"] .corner { opacity: 0; }
+
+/* rotation progress */
+.progress { position: fixed; left: var(--pad-x); right: var(--pad-x); bottom: 5vh; display: flex; gap: 6px; z-index: 2; }
+.progress span { flex: 1; height: 3px; border-radius: 2px; background: var(--haze); overflow: hidden; }
+.progress span i { display: block; height: 100%; width: 0; background: var(--mist); }
+.progress span.done i { width: 100%; }
+.progress span.run i { animation: fill var(--dwell) linear forwards; }
+@keyframes fill { to { width: 100%; } }
+
+/* ---------- clock ---------- */
+.clock { padding-bottom: 15vh; flex-direction: row; align-items: flex-end; justify-content: space-between; }
+.time {
+  font-family: var(--display); font-weight: 300;
+  font-size: min(74vh, 58vw); line-height: .74;
+  font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+}
+.time .colon { color: var(--haze); }
+.date { text-align: right; padding-bottom: 1vh; }
+.date .wd { display: block; font-family: var(--display); font-weight: 500; font-size: 14vh; line-height: .9; }
+.date .dm { display: block; margin-top: 2vh; font-size: 5vh; color: var(--mist); }
+.offline-note { display: none; margin-top: 1.5vh; }
+body.offline .offline-note { display: inline-flex; }
+
+.weather { position: absolute; top: 7vh; right: var(--pad-x); text-align: right; }
+.weather .now { display: flex; align-items: center; justify-content: flex-end; gap: 1.2vw; }
+.weather .icon { width: 13vh; height: 13vh; color: var(--moon); }
+.weather b { font-family: var(--display); font-weight: 500; font-size: 17vh; line-height: .8; font-variant-numeric: tabular-nums; }
+.weather .sky { margin-top: 1.2vh; font-size: 4.2vh; color: var(--mist); }
+
+@media (prefers-reduced-motion: reduce) {
+  .panel, .corner { transition: none; }
+  .progress span.run i { animation: none; }
+}

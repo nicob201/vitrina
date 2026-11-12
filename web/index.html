@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<!-- Zoom stays locked: after a rotation Chrome kept a 1.7x zoom and broke the layout. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1A2142">
+<title>vitrina</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-panel="clock">
+
+<div class="corner"><span class="t" id="corner-time">--:--</span><span class="link" id="link"></span></div>
+
+<section class="panel clock on" id="clock">
+  <div class="weather" id="weather" hidden>
+    <div class="now"><svg class="icon" aria-hidden="true"><use id="weather-icon" href=""></use></svg><b id="weather-temp"></b></div>
+    <p class="sky" id="weather-sky"></p>
+  </div>
+  <div class="time"><span id="hh">--</span><span class="colon">:</span><span id="mm">--</span></div>
+  <div class="date">
+    <span class="wd" id="wd"></span><span class="dm" id="dm"></span>
+    <span class="offline-note" id="offline-note"></span>
+  </div>
+</section>
+
+<section class="panel gh" id="github"></section>
+<section class="panel claude" id="claude"></section>
+<section class="panel photo" id="photos"></section>
+
+<div class="progress" id="progress"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
