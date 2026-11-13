@@ -8,7 +8,7 @@
     <string name="repair_title">Pair again</string>
     <string name="pair_how">Plug the phone into the Mac and run: python3 server.py pair</string>
     <string name="waiting_title">Waiting for the Mac…</string>
-    <string name="waiting_detail">Start vitrina on the Mac: python3 server.py</string>
+    <string name="waiting_detail">Start vitrina on the Mac: python3 server.py\nAlready running? Hold a finger still for 3 seconds to check the Mac\'s WiFi address.</string>
     <string name="not_your_mac_title">This isn\'t your Mac</string>
     <string name="not_your_mac_detail">The server at this address isn\'t the one you paired. If you changed it, pair again.</string>
 

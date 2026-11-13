@@ -2,6 +2,7 @@ package io.github.nicob201.vitrina
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.KeyguardManager
 import android.app.NotificationManager
 import android.content.Intent
 import android.net.Uri
@@ -223,7 +224,13 @@ class MainActivity : Activity() {
         val cancel = MotionEvent.obtain(now, now, MotionEvent.ACTION_CANCEL, 0f, 0f, 0)
         window.superDispatchTouchEvent(cancel) // the page must not see this press as a tap
         cancel.recycle()
-        startActivity(Intent(this, SettingsActivity::class.java))
+        // The page shows over the lock screen; the settings don't: unlock first (PIN, if the phone has one).
+        val keyguard = getSystemService(KeyguardManager::class.java)
+        val settings = Intent(this, SettingsActivity::class.java)
+        if (!keyguard.isKeyguardLocked) startActivity(settings)
+        else keyguard.requestDismissKeyguard(this, object : KeyguardManager.KeyguardDismissCallback() {
+            override fun onDismissSucceeded() = startActivity(settings)
+        })
     }
     private var longPress = false
     private var downX = 0f

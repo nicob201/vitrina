@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.text.InputType
 import android.text.method.DigitsKeyListener
 import android.view.Gravity
+import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -34,13 +35,16 @@ class SettingsActivity : Activity() {
                 hint = getString(R.string.settings_wifi_hint)
                 inputType = InputType.TYPE_CLASS_TEXT
                 keyListener = DigitsKeyListener.getInstance("0123456789.")
+                // In landscape the keyboard would otherwise take the whole screen, hide the buttons and
+                // show the address without its dots.
+                imeOptions = EditorInfo.IME_ACTION_DONE or EditorInfo.IME_FLAG_NO_EXTRACT_UI or EditorInfo.IME_FLAG_NO_FULLSCREEN
+                setSelectAllOnFocus(true)
                 setTextColor(getColor(R.color.moon))
                 setHintTextColor(getColor(R.color.mist))
                 textSize = 24f
                 setSingleLine()
             }
-            column.addView(ip)
-            column.addView(button(getString(R.string.settings_save)) {
+            val save = {
                 val value = ip.text.toString().trim()
                 if (value.isEmpty() || Pairing.isIpv4(value)) {
                     store.save(pairing.copy(wifiIp = value))
@@ -48,7 +52,10 @@ class SettingsActivity : Activity() {
                 } else {
                     status.text = getString(R.string.settings_invalid_ip)
                 }
-            })
+            }
+            ip.setOnEditorActionListener { _, action, _ -> (action == EditorInfo.IME_ACTION_DONE).also { if (it) save() } }
+            column.addView(ip)
+            column.addView(button(getString(R.string.settings_save)) { save() })
             column.addView(status)
         }
 
