@@ -3,4 +3,22 @@
     <string name="app_name" translatable="false">vitrina</string>
     <string name="paired">Paired with your Mac</string>
     <string name="pairing_invalid">Invalid pairing data</string>
+
+    <string name="unpaired_title">Not paired yet</string>
+    <string name="repair_title">Pair again</string>
+    <string name="pair_how">Plug the phone into the Mac and run: python3 server.py pair</string>
+    <string name="waiting_title">Waiting for the Mac…</string>
+    <string name="waiting_detail">Start vitrina on the Mac: python3 server.py</string>
+    <string name="not_your_mac_title">This isn\'t your Mac</string>
+    <string name="not_your_mac_detail">The server at this address isn\'t the one you paired. If you changed it, pair again.</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_wifi">Mac\'s WiFi address</string>
+    <string name="settings_wifi_hint">e.g. 192.168.0.10 (empty: cable only)</string>
+    <string name="settings_save">Save</string>
+    <string name="settings_saved">Saved</string>
+    <string name="settings_invalid_ip">That\'s not an IPv4 address</string>
+    <string name="settings_exit">Exit to the original home screen</string>
+    <string name="settings_no_other_home">No other home screen found</string>
+    <string name="settings_back">Back</string>
 </resources>

@@ -1,21 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- To find the phone's original home screen for "Exit". -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="false"
         android:label="@string/app_name"
         android:theme="@style/Vitrina"
         android:usesCleartextTraffic="false">
 
+        <!-- The WebView only ever talks to the paired Mac: no URL checks or metrics sent to Google. -->
+        <meta-data android:name="android.webkit.WebView.EnableSafeBrowsing" android:value="false" />
+        <meta-data android:name="android.webkit.WebView.MetricsOptOut" android:value="true" />
+
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode"
             android:exported="true"
+            android:launchMode="singleTask"
             android:screenOrientation="sensorLandscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:screenOrientation="sensorLandscape" />
 
         <!-- Only adb's shell holds DUMP, so no app on the phone can re-pair vitrina to another server. -->
         <activity

@@ -2,4 +2,22 @@
 <resources>
     <string name="paired">Emparejado con tu Mac</string>
     <string name="pairing_invalid">Datos de emparejamiento inválidos</string>
+
+    <string name="unpaired_title">Todavía no está emparejado</string>
+    <string name="repair_title">Volvé a emparejar</string>
+    <string name="pair_how">Enchufá el celu a la Mac y corré: python3 server.py pair</string>
+    <string name="waiting_title">Esperando a la Mac…</string>
+    <string name="waiting_detail">Arrancá vitrina en la Mac: python3 server.py</string>
+    <string name="not_your_mac_title">No es tu Mac</string>
+    <string name="not_your_mac_detail">El server en esta dirección no es el que emparejaste. Si lo cambiaste, volvé a emparejar.</string>
+
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_wifi">Dirección WiFi de la Mac</string>
+    <string name="settings_wifi_hint">por ej. 192.168.0.10 (vacío: solo cable)</string>
+    <string name="settings_save">Guardar</string>
+    <string name="settings_saved">Guardado</string>
+    <string name="settings_invalid_ip">Esa no es una dirección IPv4</string>
+    <string name="settings_exit">Salir al inicio original</string>
+    <string name="settings_no_other_home">No hay otra pantalla de inicio</string>
+    <string name="settings_back">Volver</string>
 </resources>
