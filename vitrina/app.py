@@ -11,9 +11,10 @@ from . import adb, net
 from .claude import USAGE_URL, parse_usage, read_token, usage_headers
 from .config import ConfigError, load_config
 from .github import contributions_url, parse_contributions
-from .handler import make_server
+from .handler import make_server, tls_context
 from .i18n import pick_language
 from .loops import run_every
+from .pairing import SECRETS_DIR, PairingError, pair, read_secret
 from .photos import PhotoLibrary
 from .state import Store, build_state
 from .weather import forecast_url, geocode_url, parse_forecast, parse_place
@@ -26,7 +27,11 @@ def log(message: str) -> None:
     print(message, flush=True)
 
 
-def main(root: Path = ROOT) -> int:
+def main(argv: list[str] | None = None, root: Path = ROOT, secrets_dir: Path = SECRETS_DIR) -> int:
+    argv = argv or []
+    if argv not in ([], ["pair"]):
+        log("Usage: python3 server.py [pair]")
+        return 2
     try:
         cfg, created = load_config(root / "config.json", root / "config.example.json")
     except ConfigError as e:
@@ -34,6 +39,31 @@ def main(root: Path = ROOT) -> int:
         return 1
     if created:
         log("Created config.json. Edit it to turn on GitHub, Claude, weather and photos, then restart.")
+
+    if argv == ["pair"]:
+        ip = net.lan_ip() if cfg.wifi else None
+        try:
+            pair(secrets_dir, cfg.port, ip)
+        except PairingError as e:
+            log(str(e))
+            return 1
+        log("Paired. If the server is running, restart it.")
+        if ip:
+            log(f"  WiFi:  https://{ip}:{cfg.port}")
+        return 0
+
+    # Nothing is served until a phone is paired: no key, no certificate, no open port.
+    not_paired = "Not paired yet. Plug in the phone and run: python3 server.py pair"
+    secret = read_secret(secrets_dir)
+    cert, key = secrets_dir / "cert.pem", secrets_dir / "key.pem"
+    if secret is None or not (cert.is_file() and key.is_file()):
+        log(not_paired)
+        return 1
+    try:
+        tls = tls_context(cert, key)
+    except OSError:  # ssl.SSLError included: a damaged certificate or key
+        log("Can't read the certificate. Plug in the phone and run: python3 server.py pair")
+        return 1
 
     store = Store()
     photos = PhotoLibrary(Path(cfg.photos_dir).expanduser() if cfg.photos_dir else None)
@@ -49,7 +79,8 @@ def main(root: Path = ROOT) -> int:
         log(in_use)
         return 1
     try:
-        server = make_server("0.0.0.0" if cfg.wifi else "127.0.0.1", cfg.port, root / "web", get_state, photos.path)
+        server = make_server("0.0.0.0" if cfg.wifi else "127.0.0.1", cfg.port, root / "web", get_state, photos.path,
+                             tls=tls, secret=secret)
     except OSError as e:
         log(in_use if e.errno in _PORT_IN_USE else f"Can't use port {cfg.port}: {e.strerror or e}")
         return 1
@@ -60,8 +91,8 @@ def main(root: Path = ROOT) -> int:
     log("vitrina is running")
     ip = net.lan_ip() if cfg.wifi else None
     if ip:
-        log(f"  WiFi:  http://{ip}:{cfg.port}")
-    log(f"  Cable: http://localhost:{cfg.port}")
+        log(f"  WiFi:  https://{ip}:{cfg.port}")
+    log(f"  Cable: https://localhost:{cfg.port}")
     log("Press Ctrl+C to stop.")
     try:
         server.serve_forever()

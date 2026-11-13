@@ -5,4 +5,4 @@ if sys.version_info < (3, 9):
 
 from vitrina.app import main  # noqa: E402
 
-raise SystemExit(main())
+raise SystemExit(main(sys.argv[1:]))
