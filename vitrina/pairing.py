@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import os
+import secrets
+import shutil
 import ssl
 import subprocess
 from pathlib import Path
 
 # Certificate, private key and the pairing key live here, never in the repo or config.json.
 SECRETS_DIR = Path.home() / "Library" / "Application Support" / "vitrina"
+APP_ID = "io.github.nicob201.vitrina"
 
 
 class PairingError(Exception):
@@ -62,3 +66,37 @@ def read_secret(folder: Path) -> str | None:
     except FileNotFoundError:
         return None
     return secret or None  # an empty key would match an empty cookie
+
+
+def pair(folder: Path, port: int, wifi_ip: str | None, adb=subprocess.run, which=shutil.which) -> str:
+    """Hand a new key, the certificate fingerprint, the port and the WiFi address to the app over USB.
+
+    The old key is only replaced once the app has taken the new one. Returns the fingerprint.
+    """
+    if which("adb") is None:
+        raise PairingError("adb not found. Install it with: brew install android-platform-tools")
+    try:
+        out = adb(["adb", "devices"], capture_output=True, text=True, timeout=10).stdout
+        # "unauthorized" or "offline" phones can't be used; only "device" can.
+        ready = [line for line in out.splitlines()[1:] if line.split("\t")[-1].strip() == "device"]
+        if not ready:
+            raise PairingError("Plug in the phone and allow USB debugging.")
+        if len(ready) > 1:
+            raise PairingError("More than one phone is plugged in. Leave only the one to pair.")
+        installed = adb(["adb", "shell", "pm", "path", APP_ID], capture_output=True, text=True, timeout=10).stdout
+        if not installed.strip():
+            raise PairingError("Install the vitrina app on the phone first.")
+
+        fp = fingerprint(ensure_cert(folder)[0])
+        secret = secrets.token_urlsafe(32)
+        ip = str(ipaddress.IPv4Address(wifi_ip)) if wifi_ip else '""'
+        # The key reaches the phone through stdin: it never shows up in this Mac's process list.
+        script = (f'read -r k; am start -W -n {APP_ID}/.PairActivity --es key "$k" '
+                  f"--es fingerprint {fp} --ei port {int(port)} --es wifi_ip {ip}")
+        done = adb(["adb", "shell", script], input=secret + "\n", capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError) as e:
+        raise PairingError(f"Pairing failed: {e}") from None
+    if done.returncode != 0 or "Status: ok" not in done.stdout:
+        raise PairingError("The phone didn't accept the pairing.")
+    save_secret(folder, secret)
+    return fp
