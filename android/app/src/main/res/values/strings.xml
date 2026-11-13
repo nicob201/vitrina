@@ -32,7 +32,7 @@
     <string name="guide_why">So the screen follows the Mac: it turns on when vitrina starts there and off when it stops.</string>
     <string name="guide_home">Make vitrina the home screen</string>
     <string name="guide_timeout">Screen timeout of 1 minute or less</string>
-    <string name="guide_stay_awake">Turn off \"Stay awake\" while charging (developer options)</string>
+    <string name="guide_stay_awake">Turn off \"Stay awake\" (developer options)</string>
     <string name="guide_notifications">Allow notifications</string>
     <string name="guide_full_screen">Allow full-screen notifications</string>
     <string name="guide_open">Open</string>
