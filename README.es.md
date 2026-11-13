@@ -10,32 +10,46 @@ el celu los muestra a pantalla completa, rotando entre paneles:
 - **Uso de Claude**: sesión actual y límite semanal, con marca de ritmo (opcional)
 - **Fotos** de una carpeta de tu computadora
 
-Gratis y open source. Sin cuentas, sin nube, sin instalar nada más que Python.
+Gratis y open source. Sin cuentas, sin nube. El celu usa una pequeña app de vitrina que solo habla con tu
+computadora, y su pantalla se prende y se apaga junto con ella.
 
 ## Qué necesitás
 
-- Una computadora con **macOS o Windows** y **Python 3.9 o más nuevo**.
-  - macOS: corré `python3 --version` en la Terminal; si no está, macOS te ofrece instalarlo.
-  - Windows: instalalo desde [python.org](https://www.python.org/downloads/).
-- Un **celular Android** con Chrome, en el mismo WiFi que la computadora o enchufado por USB.
+- Una **Mac** con **Python 3.9 o más nuevo**: corré `python3 --version` en la Terminal; si no está,
+  macOS te ofrece instalarlo.
+- **adb**, para hablar con el celu por USB: `brew install android-platform-tools`.
+- Un **celular Android** (Android 8 o más nuevo) con la depuración USB activada, en el mismo WiFi que la
+  Mac o enchufado por USB.
+- Para instalar la app, por ahora desde el código: **JDK 17** y el **SDK de Android** (el de Android
+  Studio o las herramientas de línea de comandos), con `JAVA_HOME` y `ANDROID_HOME` configurados. Los APK
+  listos van a llegar en Releases.
 
 ## Arranque rápido
 
 ```sh
 git clone https://github.com/nicob201/vitrina.git
 cd vitrina
+python3 server.py              # la primera vez crea config.json y avisa que falta emparejar
+```
+
+Completá `config.json` (ver abajo). Después, con el celu enchufado por USB:
+
+```sh
+(cd android && ./gradlew installDebug)   # instala la app de vitrina en el celu
+python3 server.py pair                   # el celu dice "Emparejado"
 python3 server.py
 ```
 
-La primera vez crea `config.json`. Completalo (ver abajo) y volvé a arrancar el server. Te muestra las
-direcciones para abrir en el celu:
-
 ```
 vitrina is running
-  WiFi:  http://192.168.0.10:8765
-  Cable: http://localhost:8765
+  WiFi:  https://192.168.0.10:8765
+  Cable: https://localhost:8765
 Press Ctrl+C to stop.
 ```
+
+vitrina se abre sola en el celu. La primera vez te guía por tres ajustes del celu para que la pantalla
+pueda seguir a la Mac: vitrina como **pantalla de inicio**, **tiempo de pantalla** de un minuto o menos y
+**Permanecer activo** (Opciones para desarrolladores) apagado.
 
 ## Configuración (`config.json`)
 
@@ -55,45 +69,47 @@ Press Ctrl+C to stop.
 Un panel sin nada para mostrar queda afuera de la rotación. Al arrancar, el server muestra qué lugar
 encontró para tu ciudad, así ves que eligió el correcto.
 
-## Conectar el celu
+## Usar el celu
 
-**Por WiFi.** Abrí la dirección `WiFi:` en Chrome del celu y tocá la pantalla una vez para pasar a
-pantalla completa. Consejo: fijá la IP de tu computadora en el router para que la dirección no cambie.
-
-- **Que la pantalla no se apague:** por WiFi, Chrome no tiene permitido mantener la pantalla prendida. En
-  el celu, activá Opciones de desarrollador → **Pantalla activa** (queda prendida mientras carga).
-- **Windows:** la primera vez, el firewall pregunta por Python. Permitilo en **redes privadas**, o el
-  celu no lo va a encontrar.
+- **Cable o WiFi.** Con el celu enchufado, el server lo conecta por cable solo (`USB: phone connected`) y
+  la app lo prefiere; desenchufado, la app usa la dirección WiFi de la Mac que recibió al emparejar. La
+  esquina de la pantalla dice cuál está usando.
+- **La pantalla sigue a la Mac.** Queda prendida mientras vitrina corre en la Mac, se apaga más o menos
+  un minuto después de que se corta y se vuelve a prender cuando arranca. El botón de encendido sigue
+  andando.
+- **Tocá** para pasar al panel siguiente. Si se va la Mac, el reloj sigue andando, quedan los últimos
+  datos y aparece "sin conexión" hasta que vuelva.
+- **Dejá el dedo quieto 3 segundos** para los ajustes de la app: cambiar la dirección WiFi de la Mac (si
+  el router le dio otra) o salir a la pantalla de inicio original del celu. Consejo: fijá la IP de tu Mac
+  en el router para que la dirección no cambie.
 - **macOS con Python de python.org:** corré una vez *Install Certificates.command* (en la carpeta de
   Python dentro de Aplicaciones), o GitHub, Claude y el clima no van a poder conectarse.
-
-**Por cable.** Instalá [adb](https://developer.android.com/tools/releases/platform-tools), activá la
-depuración USB en el celu y enchufalo. El server se da cuenta (`USB: phone connected`) y arma la conexión
-solo; abrí `http://localhost:8765` en el celu.
-
-Tocá la pantalla para pasar al panel siguiente. Si se va la computadora, el reloj sigue andando, quedan
-los últimos datos y aparece "sin conexión" hasta que vuelva.
-
-> Por ahora el celu usa Chrome. Se viene una app de Android de vitrina que va a prender y apagar la
-> pantalla del celu junto con tu computadora.
 
 ## El panel de Claude
 
 Viene apagado. Con `"claude": true`, el server lee el login que **Claude Code** ya guarda en esta
 computadora y le pregunta a Anthropic tu uso cada 5 minutos:
 
-- En macOS el login está en el Llavero; macOS puede preguntarte una vez si lo permitís.
-- En Windows se lee de `~/.claude/.credentials.json`.
+- El login está en el Llavero; macOS puede preguntarte una vez si lo permitís.
 - El token **nunca sale de tu computadora** y nunca se renueva (renovarlo podría cerrarte la sesión de
   Claude Code). Al celu solo van porcentajes y horarios de reinicio.
 - Usa el mismo endpoint **no documentado** que el `/usage` de Claude Code. Puede dejar de andar en
   cualquier momento; si pasa, el panel simplemente desaparece.
 
-## Privacidad
+## Seguridad
 
-- Con `"wifi": true`, **cualquiera en tu red local puede abrir la página**, fotos incluidas. Usá
-  `"wifi": false` en redes en las que no confíes; ahí solo anda por cable.
-- El server solo responde pedidos; nunca cambia nada en tu computadora. No expongas su puerto a internet.
+- **Cerrado de entrada.** Solo la app emparejada ve algo. Todo viaja por HTTPS con un certificado hecho
+  en tu Mac, que la app reconoce por su huella (no confía en ningún otro), y cada pedido lleva una clave
+  secreta. Sin la clave el server no responde nada útil (`401`): ni la página, ni los datos, ni las fotos.
+- **Los secretos** se guardan en `~/Library/Application Support/vitrina/` (carpeta y archivos privados),
+  nunca en el repo ni en `config.json`. En el celu la clave se guarda cifrada con el Keystore de Android.
+- **Emparejar es solo por USB.** Solo adb puede abrir la pantalla de emparejar de la app, así ninguna
+  otra app del celu puede apuntar vitrina a otro server. **Emparejar de nuevo cambia la clave**: cualquier
+  celu emparejado antes (uno perdido, por ejemplo) queda afuera. Después de emparejar, reiniciá el server.
+- La página ya no se abre en Chrome ni en ningún otro navegador: solo la puede mostrar la app.
+- `"wifi": false` deja el server fuera de la red; ahí solo anda por cable.
+- El server nunca arranca solo, solo responde pedidos y nunca cambia nada en tu Mac. No expongas su
+  puerto a internet.
 - Para el clima solo se manda el nombre de la ciudad a Open-Meteo.
 
 ## Fotos
@@ -105,10 +121,12 @@ tardan en aparecer, achicalas a unos 1600 px de ancho.
 ## Desarrollo
 
 ```sh
-python3 -m unittest
+python3 -m unittest                         # server
+(cd android && ./gradlew testDebugUnitTest) # lógica de la app
 ```
 
-Sin dependencias ni build: el server es Python a secas y la página (`web/`) es HTML, CSS y JavaScript.
+El server no tiene dependencias ni build: Python a secas, y la página (`web/`) es HTML, CSS y JavaScript.
+La app (`android/`) es Kotlin con las APIs propias de Android: ninguna librería de terceros.
 
 ## Créditos
 

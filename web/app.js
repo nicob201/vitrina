@@ -237,11 +237,7 @@ setInterval(tick, 1000);
 poll();
 setInterval(poll, POLL_MS);
 
-// Tap: next panel. In a plain browser also go full screen and keep the screen on.
+// Tap: next panel. The app keeps the page full screen and turns the screen on and off.
 document.addEventListener('click', () => {
-  if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-    document.documentElement.requestFullscreen().catch(() => {});
-  }
-  if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(() => {});
   if (panels.length > 1) next();
 });
