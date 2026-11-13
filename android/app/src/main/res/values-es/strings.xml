@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="paired">Emparejado con tu Mac</string>
+    <string name="pairing_invalid">Datos de emparejamiento inválidos</string>
+</resources>

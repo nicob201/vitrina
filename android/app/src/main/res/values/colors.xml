@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Same palette as web/styles.css -->
+    <color name="night">#1A2142</color>
+    <color name="moon">#F1F2FA</color>
+    <color name="mist">#9AA1C7</color>
+</resources>

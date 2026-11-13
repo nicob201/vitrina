@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">vitrina</string>
+    <string name="paired">Paired with your Mac</string>
+    <string name="pairing_invalid">Invalid pairing data</string>
+</resources>
