@@ -32,6 +32,7 @@ def ensure_cert(folder: Path) -> tuple[Path, Path]:
     try:
         done = subprocess.run(
             ["/usr/bin/openssl", "req", "-x509", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:prime256v1",
+             "-pkeyopt", "ec_param_enc:named_curve",
              "-nodes", "-days", "3650", "-subj", "/CN=vitrina", "-keyout", str(key), "-out", str(cert)],
             capture_output=True, text=True, timeout=30,
         )

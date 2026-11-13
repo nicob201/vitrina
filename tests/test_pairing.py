@@ -38,6 +38,14 @@ class SecretsTest(unittest.TestCase):
         self.assertEqual(fingerprint(cert), out.split("=")[1].strip().replace(":", "").lower())
         self.assertRegex(fingerprint(cert), r"^[0-9a-f]{64}$")
 
+    def test_cert_names_its_curve(self):
+        # Explicit curve parameters make TLS stacks (Python's, Android's) refuse the handshake.
+        cert, _ = ensure_cert(self.dir / "v")
+        text = subprocess.run(["/usr/bin/openssl", "x509", "-in", str(cert), "-noout", "-text"],
+                              capture_output=True, text=True, check=True).stdout
+        self.assertIn("ASN1 OID: prime256v1", text)
+        self.assertNotIn("Field Type", text)
+
     def test_secret_round_trip_is_private(self):
         folder = self.dir / "v"
         save_secret(folder, "abc")
