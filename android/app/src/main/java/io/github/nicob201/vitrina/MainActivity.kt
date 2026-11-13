@@ -2,6 +2,7 @@ package io.github.nicob201.vitrina
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.NotificationManager
 import android.content.Intent
 import android.net.Uri
 import android.net.http.SslCertificate
@@ -15,6 +16,7 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import android.view.WindowManager
 import android.webkit.CookieManager
 import android.webkit.SslErrorHandler
 import android.webkit.WebResourceError
@@ -31,10 +33,19 @@ class MainActivity : Activity() {
     private lateinit var web: WebView
     private val main = Handler(Looper.getMainLooper())
     private var info: PairingInfo? = null // the pairing the page is shown with
+    private var loadedOrigin: String? = null // where the page came from; null while a message is shown
     private val retry = Runnable { connect() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // When the Mac comes back the poll service brings this up: show it over the lock screen, screen on.
+        if (Build.VERSION.SDK_INT >= 27) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+        }
         web = buildWebView()
         if (Build.VERSION.SDK_INT >= 33) {
             onBackInvokedDispatcher.registerOnBackInvokedCallback(0) {} // a kiosk has nowhere to go back to
@@ -44,14 +55,51 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         hideSystemBars()
+        getSystemService(NotificationManager::class.java).cancel(PollService.WAKE_ID)
+        refresh()
+    }
+
+    private fun refresh() {
         val current = SecureStore(this).load()
         if (current == null) {
             info = null
             showMessage(R.string.unpaired_title, R.string.pair_how)
+            return
+        }
+        startForegroundService(Intent(this, PollService::class.java))
+        ScreenBus.listener = ::onPoll
+        ScreenBus.last?.let { keepScreenOn(it.keepScreenOn) }
+        if (Guide.pending(this)) {
+            info = null // connect once the guide is done
+            main.removeCallbacks(retry)
+            showView(Guide.view(this) { refresh() })
         } else if (current != info) {
             info = current // first start, new pairing, or a new WiFi address from the settings
             connect()
         }
+    }
+
+    override fun onPause() {
+        ScreenBus.listener = null
+        super.onPause()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra(PollService.EXTRA_RELOAD, false) && info != null) connect() // the Mac is back
+    }
+
+    private fun onPoll(actions: ScreenActions, origin: String?, repair: Boolean) {
+        keepScreenOn(actions.keepScreenOn)
+        if (info == null) return
+        // Reload when the Mac comes back, when the key was refused, or when the page should come from the
+        // other address (cable plugged in or pulled out).
+        if (actions.reload || (repair && loadedOrigin != null) || (origin != null && origin != loadedOrigin)) connect()
+    }
+
+    private fun keepScreenOn(on: Boolean) {
+        if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -98,6 +146,7 @@ class MainActivity : Activity() {
             cookies.setCookie(o, "vitrina_key=${pairing.key}; Secure; HttpOnly; SameSite=Strict; Path=/") {
                 if (--pending == 0) {
                     cookies.flush()
+                    loadedOrigin = origin
                     setContentView(web)
                     web.loadUrl("$origin/")
                 }
@@ -113,9 +162,12 @@ class MainActivity : Activity() {
         main.postDelayed(retry, 20_000)
     }
 
-    private fun showMessage(title: Int, detail: Int) {
+    private fun showMessage(title: Int, detail: Int) = showView(messageView(this, getString(title), getString(detail)))
+
+    private fun showView(view: View) {
+        loadedOrigin = null
         web.loadUrl("about:blank") // stop the hidden page from polling
-        setContentView(messageView(this, getString(title), getString(detail)))
+        setContentView(view)
     }
 
     @SuppressLint("SetJavaScriptEnabled")

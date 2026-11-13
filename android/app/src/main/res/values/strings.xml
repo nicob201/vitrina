@@ -21,4 +21,20 @@
     <string name="settings_exit">Exit to the original home screen</string>
     <string name="settings_no_other_home">No other home screen found</string>
     <string name="settings_back">Back</string>
+
+    <string name="channel_status">Status</string>
+    <string name="channel_wake">The Mac is back</string>
+    <string name="notif_waiting">Waiting for the Mac</string>
+    <string name="notif_connected">Following the Mac</string>
+    <string name="mac_back">The Mac is back</string>
+
+    <string name="guide_title">Almost there</string>
+    <string name="guide_why">So the screen follows the Mac: it turns on when vitrina starts there and off when it stops.</string>
+    <string name="guide_home">Make vitrina the home screen</string>
+    <string name="guide_timeout">Screen timeout of 1 minute or less</string>
+    <string name="guide_stay_awake">Turn off \"Stay awake\" while charging (developer options)</string>
+    <string name="guide_notifications">Allow notifications</string>
+    <string name="guide_full_screen">Allow full-screen notifications</string>
+    <string name="guide_open">Open</string>
+    <string name="guide_done">Done</string>
 </resources>

@@ -20,4 +20,20 @@
     <string name="settings_exit">Salir al inicio original</string>
     <string name="settings_no_other_home">No hay otra pantalla de inicio</string>
     <string name="settings_back">Volver</string>
+
+    <string name="channel_status">Estado</string>
+    <string name="channel_wake">Volvió la Mac</string>
+    <string name="notif_waiting">Esperando a la Mac</string>
+    <string name="notif_connected">Siguiendo a la Mac</string>
+    <string name="mac_back">Volvió la Mac</string>
+
+    <string name="guide_title">Ya casi</string>
+    <string name="guide_why">Así la pantalla sigue a la Mac: se prende cuando vitrina arranca ahí y se apaga cuando se corta.</string>
+    <string name="guide_home">Elegí vitrina como pantalla de inicio</string>
+    <string name="guide_timeout">Tiempo de pantalla de 1 minuto o menos</string>
+    <string name="guide_stay_awake">Apagá \"mantener la pantalla encendida mientras carga\" (opciones para desarrolladores)</string>
+    <string name="guide_notifications">Permití las notificaciones</string>
+    <string name="guide_full_screen">Permití las notificaciones de pantalla completa</string>
+    <string name="guide_open">Abrir</string>
+    <string name="guide_done">Listo</string>
 </resources>
