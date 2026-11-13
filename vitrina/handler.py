@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import hmac
 import ipaddress
 import json
 import mimetypes
 import re
+import ssl
 import sys
+from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Callable
@@ -22,13 +25,26 @@ REQUEST_TIMEOUT = 30
 _LOCAL = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
 
 
+def tls_context(cert: Path, key: Path) -> ssl.SSLContext:
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+    ctx.load_cert_chain(cert, key)
+    return ctx
+
+
 def make_server(
     host: str,
     port: int,
     web_dir: Path,
     get_state: Callable[[str | None, str], dict],
     photo_path: Callable[[int], Path | None],
+    tls: ssl.SSLContext,
+    secret: str,
 ) -> ThreadingHTTPServer:
+    """HTTPS only, and only for whoever presents the paired key. There is no unencrypted mode."""
+    if not secret:
+        raise ValueError("a pairing key is required")
+    expected = secret.encode("utf-8")
     root = web_dir.resolve()
     # The request path never touches the filesystem: only files listed here at startup are served.
     # (On Windows a path like \\host\share would otherwise make the PC connect to that host.)
@@ -42,10 +58,26 @@ def make_server(
     class Handler(BaseHTTPRequestHandler):
         timeout = REQUEST_TIMEOUT
 
+        def setup(self) -> None:
+            # The handshake runs in this connection's own thread, under the timeout,
+            # so a slow or silent client never holds up the others.
+            self.request.settimeout(self.timeout)
+            self.request = tls.wrap_socket(self.request, server_side=True)
+            super().setup()
+
+        def finish(self) -> None:
+            try:
+                super().finish()
+            finally:
+                self.request.close()  # the server only knows the plain socket, which TLS took over
+
         # Read-only on purpose: only GET is defined, everything else gets 501.
         def do_GET(self) -> None:
             if not _local_host(self.headers.get("Host")):
                 self._send(403, "text/plain; charset=utf-8", b"forbidden")
+                return
+            if not self._has_key():
+                self._send(401, "text/plain; charset=utf-8", b"")
                 return
             path = unquote(urlsplit(self.path).path)
             if path == "/api/state":
@@ -59,6 +91,20 @@ def make_server(
                 self._send_file(photo_path(int(photo.group(1))))
                 return
             self._send_file(files.get(path))
+
+        def _has_key(self) -> bool:
+            offered = []
+            try:
+                morsel = SimpleCookie(self.headers.get("Cookie") or "").get("vitrina_key")
+                if morsel is not None:
+                    offered.append(morsel.value)
+            except CookieError:
+                pass
+            auth = self.headers.get("Authorization") or ""
+            if auth.startswith("Bearer "):
+                offered.append(auth[len("Bearer "):])
+            # Bytes, so a non-ASCII value is just a wrong key (compare_digest refuses non-ASCII str).
+            return any(hmac.compare_digest(k.encode("utf-8"), expected) for k in offered)
 
         def _send_file(self, file: Path | None) -> None:
             if file is None or not file.is_file():
@@ -88,6 +134,12 @@ def make_server(
         # On Windows SO_REUSEADDR lets a second server silently share the port;
         # elsewhere it only allows a quick restart after Ctrl+C.
         allow_reuse_address = sys.platform != "win32"
+
+        def handle_error(self, request, client_address) -> None:
+            # Failed handshakes (plain HTTP, port scanners) and dropped connections are not news.
+            if isinstance(sys.exc_info()[1], OSError):
+                return
+            super().handle_error(request, client_address)
 
     return Server((host, port), Handler)
 

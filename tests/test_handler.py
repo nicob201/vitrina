@@ -1,14 +1,20 @@
 import http.client
+import io
 import json
 import socket
+import ssl
 import tempfile
 import threading
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
 
+from tests.tls import make_cert
 from vitrina import handler
-from vitrina.handler import make_server
+from vitrina.handler import make_server, tls_context
+
+KEY = "s3cret"
 
 
 class HandlerTest(unittest.TestCase):
@@ -31,8 +37,10 @@ class HandlerTest(unittest.TestCase):
             self.state_calls.append((accept_language, link))
             return {"panels": ["clock"], "text": "sin conexión"}
 
+        self.cert, self.key = make_cert(root / "certs")
+        self.tls = tls_context(self.cert, self.key)
         self.server = make_server("127.0.0.1", 0, self.web, get_state,
-                                  lambda i: self.photo if i == 0 else None)
+                                  lambda i: self.photo if i == 0 else None, tls=self.tls, secret=KEY)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
 
     def tearDown(self):
@@ -40,9 +48,14 @@ class HandlerTest(unittest.TestCase):
         self.server.server_close()
         self._tmp.cleanup()
 
-    def get(self, path, headers=None):
-        conn = http.client.HTTPConnection("127.0.0.1", self.server.server_address[1], timeout=5)
-        conn.request("GET", path, headers=headers or {})
+    def get(self, path, headers=None, key=KEY):
+        ctx = ssl.create_default_context(cafile=str(self.cert))
+        ctx.check_hostname = False
+        conn = http.client.HTTPSConnection("127.0.0.1", self.server.server_address[1], timeout=5, context=ctx)
+        headers = dict(headers or {})
+        if key is not None:
+            headers.setdefault("Cookie", f"vitrina_key={key}")
+        conn.request("GET", path, headers=headers)
         resp = conn.getresponse()
         body = resp.read()
         conn.close()
@@ -113,7 +126,7 @@ class HandlerTest(unittest.TestCase):
     def test_idle_connections_are_closed(self):
         # A client that connects and says nothing must not hold a thread forever.
         with mock.patch.object(handler, "REQUEST_TIMEOUT", 0.3):
-            s = make_server("127.0.0.1", 0, self.web, lambda a, l: {}, lambda i: None)
+            s = make_server("127.0.0.1", 0, self.web, lambda a, l: {}, lambda i: None, tls=self.tls, secret=KEY)
         threading.Thread(target=s.serve_forever, daemon=True).start()
         try:
             with socket.create_connection(("127.0.0.1", s.server_address[1])) as sock:
@@ -125,14 +138,67 @@ class HandlerTest(unittest.TestCase):
 
     def test_second_server_on_same_port_fails(self):
         with self.assertRaises(OSError):
-            make_server("127.0.0.1", self.server.server_address[1], self.web, lambda a, l: {}, lambda i: None)
+            make_server("127.0.0.1", self.server.server_address[1], self.web, lambda a, l: {}, lambda i: None,
+                        tls=self.tls, secret=KEY)
 
     def test_windows_does_not_share_the_port(self):
         # On Windows SO_REUSEADDR lets a second server silently bind the same port.
         with mock.patch.object(handler.sys, "platform", "win32"):
-            s = make_server("127.0.0.1", 0, self.web, lambda a, l: {}, lambda i: None)
+            s = make_server("127.0.0.1", 0, self.web, lambda a, l: {}, lambda i: None, tls=self.tls, secret=KEY)
         s.server_close()
         self.assertFalse(s.allow_reuse_address)
+
+    def test_no_key_gets_401_everywhere(self):
+        for path in ("/", "/a.css", "/api/state", "/api/photo/0", "/nope.js"):
+            with self.subTest(path=path):
+                resp, body = self.get(path, key=None)
+                self.assertEqual((resp.status, body), (401, b""))
+        self.assertEqual(self.state_calls, [])
+
+    def test_wrong_key_gets_401(self):
+        for cookie in ("vitrina_key=nope", "vitrina_key=", "vitrina_key=s3cret2", "other=s3cret", "vitrina_key=ñ",
+                       'vitrina_key="unclosed'):
+            with self.subTest(cookie=cookie):
+                resp, body = self.get("/", {"Cookie": cookie}, key=None)
+                self.assertEqual((resp.status, body), (401, b""))
+        for auth in ("Bearer nope", "Bearer ", "Basic s3cret", "s3cret", "Bearer ñ"):
+            with self.subTest(auth=auth):
+                self.assertEqual(self.get("/", {"Authorization": auth}, key=None)[0].status, 401)
+
+    def test_key_among_other_cookies_works(self):
+        self.assertEqual(self.get("/", {"Cookie": "a=1; vitrina_key=s3cret; b=2"}, key=None)[0].status, 200)
+
+    def test_bearer_header_works(self):
+        resp, _ = self.get("/api/state", {"Authorization": "Bearer s3cret"}, key=None)
+        self.assertEqual(resp.status, 200)
+
+    def test_an_empty_key_is_refused(self):
+        with self.assertRaises(ValueError):
+            make_server("127.0.0.1", 0, self.web, lambda a, l: {}, lambda i: None, tls=self.tls, secret="")
+
+    def test_tls_1_2_is_the_minimum(self):
+        self.assertEqual(tls_context(self.cert, self.key).minimum_version, ssl.TLSVersion.TLSv1_2)
+
+    def test_plain_http_is_dropped_quietly(self):
+        with redirect_stderr(io.StringIO()) as err:
+            with socket.create_connection(("127.0.0.1", self.server.server_address[1])) as s:
+                s.sendall(b"GET / HTTP/1.1\r\nHost: x\r\n\r\n")
+                s.settimeout(3)
+                self.assertNotIn(b"HTTP/", _first_bytes(s))  # a close, reset or TLS alert; never an HTTP answer
+            with socket.create_connection(("127.0.0.1", self.server.server_address[1])) as s:
+                s.sendall(b"\x16\x03\x01garbage" * 10)
+                s.settimeout(3)
+                self.assertNotIn(b"HTTP/", _first_bytes(s))
+            resp, _ = self.get("/")  # still serving
+        self.assertEqual(resp.status, 200)
+        self.assertNotIn("Traceback", err.getvalue())
+
+
+def _first_bytes(sock):
+    try:
+        return sock.recv(100)
+    except ConnectionResetError:  # the server hung up with our bytes unread
+        return b""
 
 
 if __name__ == "__main__":
