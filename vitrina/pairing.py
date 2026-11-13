@@ -92,12 +92,16 @@ def pair(folder: Path, port: int, wifi_ip: str | None, adb=subprocess.run, which
         secret = secrets.token_urlsafe(32)
         ip = str(ipaddress.IPv4Address(wifi_ip)) if wifi_ip else '""'
         # The key reaches the phone through stdin: it never shows up in this Mac's process list.
-        script = (f'read -r k; am start -W -n {APP_ID}/.PairActivity --es key "$k" '
+        # --activity-clear-task: otherwise a task left by an earlier pairing is just brought to the front
+        # and the pairing screen never opens, while am still says "Status: ok".
+        script = (f'read -r k; am start -W --activity-clear-task -n {APP_ID}/.PairActivity --es key "$k" '
                   f"--es fingerprint {fp} --ei port {int(port)} --es wifi_ip {ip}")
         done = adb(["adb", "shell", script], input=secret + "\n", capture_output=True, text=True, timeout=30)
     except (OSError, subprocess.SubprocessError) as e:
         raise PairingError(f"Pairing failed: {e}") from None
-    if done.returncode != 0 or "Status: ok" not in done.stdout:
+    lines = done.stdout.splitlines()
+    opened = "Status: ok" in lines and f"Activity: {APP_ID}/.PairActivity" in lines
+    if done.returncode != 0 or not opened or "Warning: Activity not started" in done.stdout:
         raise PairingError("The phone didn't accept the pairing.")
     save_secret(folder, secret)
     return fp

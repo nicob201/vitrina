@@ -71,13 +71,20 @@ class SecretsTest(unittest.TestCase):
 
 
 DEVICE = "List of devices attached\nR58M123\tdevice\n\n"
+# Real `am start -W` output on the Nokia (Android 12).
+AM_OK = ("Starting: Intent { flg=0x8000 cmp=io.github.nicob201.vitrina/.PairActivity (has extras) }\nStatus: ok\n"
+         "LaunchState: WARM\nActivity: io.github.nicob201.vitrina/.PairActivity\nTotalTime: 156\nWaitTime: 159\nComplete\n")
+AM_NOT_STARTED = ("Starting: Intent { cmp=io.github.nicob201.vitrina/.PairActivity (has extras) }\n"
+                  "Warning: Activity not started, intent has been delivered to currently running top-most instance.\n"
+                  "Status: ok\nLaunchState: UNKNOWN (0)\nActivity: io.github.nicob201.vitrina/.MainActivity\n"
+                  "TotalTime: 0\nWaitTime: 9\nComplete\n")
 
 
 class FakeAdb:
     """Answers adb by subcommand and records every command line and stdin."""
 
     def __init__(self, devices=DEVICE, pm="package:/data/app/~~x/io.github.nicob201.vitrina/base.apk\n",
-                 am="Starting: Intent { cmp=io.github.nicob201.vitrina/.PairActivity }\nStatus: ok\n", am_code=0):
+                 am=AM_OK, am_code=0):
         self.devices, self.pm, self.am, self.am_code = devices, pm, am, am_code
         self.calls, self.inputs = [], []
 
@@ -130,6 +137,7 @@ class PairTest(unittest.TestCase):
         self.assertEqual(fp, fingerprint(self.folder / "cert.pem"))
         script = fake.calls[-1][2]
         self.assertIn("io.github.nicob201.vitrina/.PairActivity", script)
+        self.assertIn("--activity-clear-task", script)  # always a fresh pairing screen
         self.assertIn(f"--es fingerprint {fp}", script)
         self.assertIn("--ei port 8765", script)
         self.assertIn("--es wifi_ip 192.168.0.10", script)
@@ -142,7 +150,8 @@ class PairTest(unittest.TestCase):
 
     def test_failed_send_keeps_the_old_secret(self):
         save_secret(self.folder, "old")
-        for fake in (FakeAdb(am="Error: Activity not started\n"), FakeAdb(am_code=1)):
+        # AM_NOT_STARTED: "Status: ok" although the pairing screen never opened (an older task was brought up).
+        for fake in (FakeAdb(am="Error: Activity not started\n"), FakeAdb(am_code=1), FakeAdb(am=AM_NOT_STARTED)):
             with self.subTest(am=fake.am, code=fake.am_code):
                 with self.assertRaises(PairingError):
                     pair(self.folder, 8765, "192.168.0.10", adb=fake, which=has_adb)
@@ -157,6 +166,11 @@ class PairTest(unittest.TestCase):
                 with self.assertRaises(PairingError):
                     pair(self.folder, 8765, None, adb=broken, which=has_adb)
                 self.assertEqual(read_secret(self.folder), "old")
+
+    def test_crlf_output_from_adb_is_fine(self):
+        fake = FakeAdb(am=AM_OK.replace("\n", "\r\n"))
+        pair(self.folder, 8765, None, adb=fake, which=has_adb)
+        self.assertIsNotNone(read_secret(self.folder))
 
     def test_no_wifi_ip_sends_empty(self):
         fake = FakeAdb()
