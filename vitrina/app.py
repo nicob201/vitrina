@@ -95,7 +95,7 @@ def main(argv: list[str] | None = None, root: Path = ROOT, secrets_dir: Path = S
 
     stop = threading.Event()
     own_adb = not adb.daemon_running()  # if the server opens adb's daemon, it closes it when it stops
-    _start_sources(cfg, store, photos, stop)
+    cable = _start_sources(cfg, store, photos, stop)
 
     def on_long_sleep() -> None:
         # The Mac may wake on another network (a café): don't come back listening there.
@@ -117,6 +117,8 @@ def main(argv: list[str] | None = None, root: Path = ROOT, secrets_dir: Path = S
     finally:
         stop.set()
         server.server_close()
+        # A cable check still running would start adb's daemon again; its adb calls time out at 5 s each.
+        cable.join(11)
         adb.release(cfg.port, own_adb)
         if lock:
             lock.close()
@@ -132,7 +134,8 @@ def _answers_on_localhost(port: int) -> bool:
         return False
 
 
-def _start_sources(cfg, store: Store, photos: PhotoLibrary, stop: threading.Event) -> None:
+def _start_sources(cfg, store: Store, photos: PhotoLibrary, stop: threading.Event) -> threading.Thread:
+    """Start every source; returns the cable check's thread."""
     if cfg.github_user:
         def github() -> None:
             html = net.fetch(contributions_url(cfg.github_user)).decode("utf-8")
@@ -169,4 +172,4 @@ def _start_sources(cfg, store: Store, photos: PhotoLibrary, stop: threading.Even
         if connected != usb["connected"]:
             usb["connected"] = connected
             log("USB: phone connected" if connected else "USB: phone disconnected")
-    run_every(10, cable, "USB", log, stop)
+    return run_every(10, cable, "USB", log, stop)

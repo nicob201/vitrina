@@ -159,7 +159,7 @@ class PortTest(unittest.TestCase):
         self.assertIn("already running", out)
         self.assert_port_free(port)
 
-    def serve_until_long_sleep(self, config):
+    def serve_until_long_sleep(self, config, cable=lambda port: False, release=None):
         """Run the real server until it holds the lock, then report a long sleep; returns what it did."""
         (self.root / "config.json").write_text(json.dumps(config))
         self.pair_for_tests()
@@ -171,8 +171,8 @@ class PortTest(unittest.TestCase):
 
         with mock.patch("vitrina.app.control.watch_sleep", side_effect=lambda cb, stop: woke.setdefault("cb", cb)), \
                 mock.patch("vitrina.app.adb.daemon_running", return_value=False), \
-                mock.patch("vitrina.app.adb.ensure_reverse", return_value=False), \
-                mock.patch("vitrina.app.adb.release") as release, \
+                mock.patch("vitrina.app.adb.ensure_reverse", side_effect=cable), \
+                mock.patch("vitrina.app.adb.release", side_effect=release) as release, \
                 mock.patch("vitrina.app.PhotoLibrary", wraps=PhotoLibrary) as photos:
             thread = threading.Thread(target=target, daemon=True)
             thread.start()
@@ -195,6 +195,25 @@ class PortTest(unittest.TestCase):
         release.assert_called_once_with(port, True)  # vitrina opened adb's daemon, so it closes it
         self.assert_port_free(port)
         self.assertIsNone(running_pid(self.secrets))
+
+    def test_adb_is_released_after_the_cable_check_finishes(self):
+        # A cable check still running would start adb's daemon again right after it's closed.
+        events, checking = [], threading.Event()
+
+        def cable(port):
+            checking.set()
+            threading.Event().wait(0.5)
+            events.append("cable check done")
+            return False
+
+        def lock_once_checking(folder):
+            self.assertTrue(checking.wait(3))  # stop arrives while the first cable check runs
+            return hold_lock(folder)
+
+        with mock.patch("vitrina.app.control.hold_lock", side_effect=lock_once_checking):
+            self.serve_until_long_sleep({"port": self.free_port(), "wifi": False}, cable=cable,
+                                        release=lambda port, own: events.append("release"))
+        self.assertEqual(events, ["cable check done", "release"])
 
     def test_relative_photos_dir_is_next_to_config(self):
         # Started from any folder, "fotos" still means the folder beside config.json.
