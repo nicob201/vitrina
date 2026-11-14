@@ -37,20 +37,45 @@ Completá `config.json` (ver abajo). Después, con el celu enchufado por USB:
 ```sh
 (cd android && ./gradlew installDebug)   # instala la app de vitrina en el celu
 python3 server.py pair                   # el celu dice "Emparejado"
-python3 server.py
+python3 server.py start                  # arranca en segundo plano
 ```
 
 ```
 vitrina is running
   WiFi:  https://192.168.0.10:8765
   Cable: https://localhost:8765
-Press Ctrl+C to stop.
+To stop it: python3 server.py stop
+Log: /Users/vos/Library/Application Support/vitrina/server.log
 ```
 
 vitrina se abre sola en el celu. La primera vez te guía por los ajustes del celu que hacen falta para
 que la pantalla siga a la Mac: vitrina como **pantalla de inicio**, **tiempo de pantalla** de un minuto o
 menos, **Permanecer activo** (Opciones para desarrolladores) apagado y, en versiones nuevas de Android,
 permiso para sus notificaciones.
+
+## Arrancar y frenar
+
+Para tener el comando `vitrina` en cualquier carpeta, una sola vez, parado en la carpeta del proyecto:
+
+```sh
+mkdir -p ~/.local/bin && ln -s "$PWD/server.py" ~/.local/bin/vitrina
+```
+
+`~/.local/bin` tiene que estar en tu PATH. Si no está, `python3 server.py` desde la carpeta del proyecto hace
+lo mismo.
+
+| Comando | Qué hace |
+|---|---|
+| `vitrina start` | Arranca en segundo plano. Podés cerrar la terminal. |
+| `vitrina stop` | Lo frena, esté donde esté corriendo: libera el puerto y saca la conexión por cable, y si el que abrió `adb` fue vitrina, también lo cierra. La pantalla del celu se apaga sola. |
+| `vitrina` | Lo corre en primer plano, con los mensajes a la vista. Ctrl+C lo frena. |
+| `vitrina pair` | Empareja el celu (ver arriba). |
+
+En segundo plano los mensajes van a `~/Library/Application Support/vitrina/server.log`.
+
+**Si la Mac durmió más de una hora, vitrina se frena sola** apenas despierta: la Mac pudo cambiar de red (de tu
+casa a un café) y vitrina no vuelve a escuchar ahí. Corré `vitrina start` de nuevo. Si duerme menos, sigue como
+estaba y el celu se prende solo. Nada arranca solo: vitrina corre solo cuando vos la arrancás.
 
 ## Configuración (`config.json`)
 

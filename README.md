@@ -36,20 +36,45 @@ Fill in `config.json` (see below). Then, with the phone plugged in by USB:
 ```sh
 (cd android && ./gradlew installDebug)   # installs the vitrina app on the phone
 python3 server.py pair                   # the phone says "Paired"
-python3 server.py
+python3 server.py start                  # runs in the background
 ```
 
 ```
 vitrina is running
   WiFi:  https://192.168.0.10:8765
   Cable: https://localhost:8765
-Press Ctrl+C to stop.
+To stop it: python3 server.py stop
+Log: /Users/you/Library/Application Support/vitrina/server.log
 ```
 
 vitrina opens on the phone by itself. The first time it walks you through the phone settings the screen
 needs to follow the Mac: make vitrina the **home screen**, a **screen timeout** of one minute or less,
 **Stay awake** (Developer options) turned off and, on newer Android versions, permission for its
 notifications.
+
+## Starting and stopping
+
+To get the `vitrina` command in any folder, once, from the project folder:
+
+```sh
+mkdir -p ~/.local/bin && ln -s "$PWD/server.py" ~/.local/bin/vitrina
+```
+
+`~/.local/bin` must be in your PATH. If it isn't, `python3 server.py` from the project folder does the same.
+
+| Command | What it does |
+|---|---|
+| `vitrina start` | Starts in the background. You can close the terminal. |
+| `vitrina stop` | Stops it wherever it's running: frees the port and drops the cable link, and if vitrina was the one that opened `adb`, closes it too. The phone's screen turns off by itself. |
+| `vitrina` | Runs it in the foreground, messages in view. Ctrl+C stops it. |
+| `vitrina pair` | Pairs the phone (see above). |
+
+In the background, messages go to `~/Library/Application Support/vitrina/server.log`.
+
+**If the Mac slept for more than an hour, vitrina stops by itself** as soon as it wakes: the Mac may be on
+another network (from home to a café) and vitrina won't come back listening there. Run `vitrina start` again.
+After a shorter sleep it carries on and the phone turns on by itself. Nothing starts on its own: vitrina only
+runs when you start it.
 
 ## Settings (`config.json`)
 
