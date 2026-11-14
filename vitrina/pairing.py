@@ -27,8 +27,10 @@ def ensure_cert(folder: Path) -> tuple[Path, Path]:
     """Create the self-signed certificate the first time; reuse it afterwards."""
     _private_dir(folder)
     cert, key = folder / "cert.pem", folder / "key.pem"
-    if cert.is_file() and key.is_file():
+    if _usable(cert, key):
         return cert, key
+    cert.unlink(missing_ok=True)  # damaged or half made: start over (pairing sends the new fingerprint)
+    key.unlink(missing_ok=True)
     try:
         done = subprocess.run(
             ["/usr/bin/openssl", "req", "-x509", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:prime256v1",
@@ -44,6 +46,15 @@ def ensure_cert(folder: Path) -> tuple[Path, Path]:
     cert.chmod(0o600)  # the folder is already 0700, so nobody else could read them in between
     key.chmod(0o600)
     return cert, key
+
+
+def _usable(cert: Path, key: Path) -> bool:
+    try:
+        fingerprint(cert)
+        ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER).load_cert_chain(cert, key)  # what the server will do
+        return True
+    except (OSError, ValueError):  # missing, unreadable, not PEM, or not a matching pair
+        return False
 
 
 def fingerprint(cert: Path) -> str:

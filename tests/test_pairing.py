@@ -1,3 +1,4 @@
+import ssl
 import stat
 import subprocess
 import tempfile
@@ -24,6 +25,26 @@ class SecretsTest(unittest.TestCase):
         self.assertEqual(stat.S_IMODE((self.dir / "v").stat().st_mode), 0o700)
         self.assertEqual(stat.S_IMODE(key.stat().st_mode), 0o600)
         self.assertEqual(stat.S_IMODE(cert.stat().st_mode), 0o600)
+
+    def assert_usable(self, cert, key):
+        ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER).load_cert_chain(cert, key)  # what the server does
+        self.assertRegex(fingerprint(cert), r"^[0-9a-f]{64}$")
+
+    def test_a_damaged_or_mismatched_pair_is_made_again(self):
+        # The server tells the user to run `pair` when it can't load these; `pair` must then fix them.
+        other_cert, other_key = ensure_cert(self.dir / "other")
+        damage = {
+            "key": lambda c, k: k.write_text("not a key"),
+            "cert": lambda c, k: c.write_text("not a certificate"),
+            "mismatch": lambda c, k: k.write_bytes(other_key.read_bytes()),
+        }
+        for name, spoil in damage.items():
+            with self.subTest(name):
+                cert, key = ensure_cert(self.dir / name)
+                spoil(cert, key)
+                cert, key = ensure_cert(self.dir / name)
+                self.assert_usable(cert, key)
+                self.assertEqual(stat.S_IMODE(key.stat().st_mode), 0o600)
 
     def test_existing_folder_is_made_private(self):
         folder = self.dir / "v"
