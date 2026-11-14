@@ -96,18 +96,12 @@ def make_server(
             self._send_file(files.get(path))
 
         def _has_key(self) -> bool:
-            offered = []
-            # Parsed by hand: SimpleCookie takes quadratic time on some inputs (CVE-2024-7592),
-            # and this runs before the key is known to be good.
-            for part in (self.headers.get("Cookie") or "").split(";"):
-                name, _, value = part.strip().partition("=")
-                if name == "vitrina_key":
-                    offered.append(value)
+            # Only the header: the app never puts the key in a cookie, so no browser store ever holds it.
             auth = self.headers.get("Authorization") or ""
-            if auth.startswith("Bearer "):
-                offered.append(auth[len("Bearer "):])
+            if not auth.startswith("Bearer "):
+                return False
             # Bytes, so a non-ASCII value is just a wrong key (compare_digest refuses non-ASCII str).
-            return any(hmac.compare_digest(k.encode("utf-8"), expected) for k in offered)
+            return hmac.compare_digest(auth[len("Bearer "):].encode("utf-8"), expected)
 
         def _send_file(self, file: Path | None) -> None:
             if file is None or not file.is_file():

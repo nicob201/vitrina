@@ -55,7 +55,7 @@ class HandlerTest(unittest.TestCase):
         conn = http.client.HTTPSConnection("127.0.0.1", self.server.server_address[1], timeout=5, context=ctx)
         headers = dict(headers or {})
         if key is not None:
-            headers.setdefault("Cookie", f"vitrina_key={key}")
+            headers.setdefault("Authorization", f"Bearer {key}")
         conn.request("GET", path, headers=headers)
         resp = conn.getresponse()
         body = resp.read()
@@ -167,7 +167,8 @@ class HandlerTest(unittest.TestCase):
                 self.assertEqual(self.get("/", {"Authorization": auth}, key=None)[0].status, 401)
 
     def test_a_hostile_cookie_cannot_stall_the_server(self):
-        # CVE-2024-7592: SimpleCookie in Python 3.9 takes quadratic time on quoted backslashes.
+        # CVE-2024-7592: SimpleCookie in Python 3.9 takes quadratic time on quoted backslashes;
+        # the server must never parse cookies at all.
         hostile = 'vitrina_key="' + "\\" * 30000 + '"'
         start = time.monotonic()
         resp, body = self.get("/api/state", {"Cookie": hostile}, key=None)
@@ -188,8 +189,11 @@ class HandlerTest(unittest.TestCase):
                 self.assertNotIn("Python", resp.getheader("Server") or "")
                 self.assertNotIn("BaseHTTP", resp.getheader("Server") or "")
 
-    def test_key_among_other_cookies_works(self):
-        self.assertEqual(self.get("/", {"Cookie": "a=1; vitrina_key=s3cret; b=2"}, key=None)[0].status, 200)
+    def test_a_cookie_no_longer_opens_anything(self):
+        # The app sends the key only as a header; nothing about it is kept in a cookie store.
+        for cookie in ("vitrina_key=s3cret", "a=1; vitrina_key=s3cret; b=2"):
+            with self.subTest(cookie=cookie):
+                self.assertEqual(self.get("/api/state", {"Cookie": cookie}, key=None)[0].status, 401)
 
     def test_bearer_header_works(self):
         resp, _ = self.get("/api/state", {"Authorization": "Bearer s3cret"}, key=None)
