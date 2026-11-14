@@ -123,35 +123,54 @@ class StartStopTest(unittest.TestCase):
         self.assertIsNone(running_pid(self.folder))
 
 
+AWAKE = (5, 5)  # (wall-clock seconds, awake seconds) between two looks
+
+
+def nap(seconds):
+    return (5 + seconds, 5)
+
+
+class Timeline:
+    """Fake clocks: each look returns (wall, awake) after the next step; awake forever afterwards."""
+
+    def __init__(self, *steps):
+        self.steps, self.looks, self.wall, self.awake = list(steps), 0, 0.0, 0.0
+
+    def __call__(self):
+        if self.looks:
+            w, a = self.steps.pop(0) if self.steps else AWAKE
+            self.wall, self.awake = self.wall + w, self.awake + a
+        self.looks += 1
+        return self.wall, self.awake
+
+
 class WatchSleepTest(unittest.TestCase):
-    def test_long_sleep_calls_back_once(self):
-        times = iter([0, 5, 10, 4000] + [4005 + 5 * i for i in range(1000)])
-        calls = []
-        stop_event = threading.Event()
-        thread = watch_sleep(lambda: calls.append(1), stop_event, clock=lambda: next(times), every=0.01)
-        thread.join(1)
-        self.assertFalse(thread.is_alive())
-        self.assertEqual(calls, [1])
-
-    def test_short_gaps_never_call_back(self):
-        ticks = []
-
-        def clock():
-            ticks.append(1)
-            return 5.0 * len(ticks)
-
-        calls = []
-        stop_event = threading.Event()
+    def watch(self, *steps):
+        """Run the watcher through the steps plus a stretch awake; returns how many times it called back."""
+        calls, stop_event, clock = [], threading.Event(), Timeline(*steps)
         thread = watch_sleep(lambda: calls.append(1), stop_event, clock=clock, every=0.001)
         for _ in range(5000):
-            if len(ticks) >= 20:
+            if clock.looks > len(steps) + 20 or not thread.is_alive():
                 break
             stop_event.wait(0.001)
         stop_event.set()
         thread.join(1)
         self.assertFalse(thread.is_alive())
-        self.assertEqual(calls, [])
+        return len(calls)
 
+    def test_long_sleep_calls_back_once(self):
+        self.assertEqual(self.watch(AWAKE, AWAKE, nap(4000)), 1)
+
+    def test_dark_wakes_dont_count_as_waking(self):
+        # Power Nap wakes the Mac for a few seconds every ~20 min while it sleeps.
+        dark_wake = [AWAKE] * 4
+        self.assertEqual(self.watch(nap(1000), *dark_wake, nap(1000), *dark_wake, nap(1000), *dark_wake, nap(1000)), 1)
+
+    def test_five_minutes_awake_resets_the_count(self):
+        self.assertEqual(self.watch(nap(3000), *[AWAKE] * 61, nap(3000)), 0)
+
+    def test_short_gaps_never_call_back(self):
+        self.assertEqual(self.watch(*[AWAKE] * 20), 0)
 
 if __name__ == "__main__":
     unittest.main()

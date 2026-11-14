@@ -106,23 +106,43 @@ def stop(folder: Path, timeout: float = 10.0) -> int:
     return 0
 
 
+def _clocks() -> tuple[float, float]:
+    # The second clock stops while the Mac sleeps, so the difference is time spent asleep.
+    return time.time(), time.clock_gettime(time.CLOCK_UPTIME_RAW)
+
+
 def watch_sleep(
     on_long_sleep: Callable[[], None],
     stop: threading.Event,
-    clock: Callable[[], float] = time.time,
+    clock: Callable[[], tuple[float, float]] = _clocks,
     every: float = 5.0,
     limit: float = 3600.0,
+    settle: float = 300.0,
 ) -> threading.Thread:
-    """Call on_long_sleep once if the wall clock jumps more than limit between two looks: the Mac slept."""
+    """Call on_long_sleep once when the Mac has slept more than limit seconds without really waking up.
+
+    While asleep, macOS wakes for a few seconds every so often (Power Nap); those don't count as waking:
+    only settle seconds awake in a row start the count over.
+    """
 
     def watch() -> None:
-        last = clock()
+        last_wall, last_awake = clock()
+        slept = awake_run = 0.0
         while not stop.wait(every):
-            now = clock()
-            if now - last > limit:
+            wall, awake = clock()
+            awake_gap = awake - last_awake
+            slept_gap = (wall - last_wall) - awake_gap
+            last_wall, last_awake = wall, awake
+            if slept_gap > 1.0:
+                slept += slept_gap
+                awake_run = 0.0
+            else:
+                awake_run += awake_gap
+                if awake_run >= settle:
+                    slept = 0.0
+            if slept > limit:
                 on_long_sleep()
                 return
-            last = now
 
     thread = threading.Thread(target=watch, name="Sleep", daemon=True)
     thread.start()

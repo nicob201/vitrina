@@ -159,7 +159,7 @@ class PortTest(unittest.TestCase):
         self.assertIn("already running", out)
         self.assert_port_free(port)
 
-    def serve_until_long_sleep(self, config, cable=lambda port: False, release=None):
+    def serve_until_long_sleep(self, config, cable=lambda port: False, release=None, adb_running=False):
         """Run the real server until it holds the lock, then report a long sleep; returns what it did."""
         (self.root / "config.json").write_text(json.dumps(config))
         self.pair_for_tests()
@@ -170,7 +170,7 @@ class PortTest(unittest.TestCase):
                 result["code"] = main([], self.root, self.secrets)
 
         with mock.patch("vitrina.app.control.watch_sleep", side_effect=lambda cb, stop: woke.setdefault("cb", cb)), \
-                mock.patch("vitrina.app.adb.daemon_running", return_value=False), \
+                mock.patch("vitrina.app.adb.daemon_running", return_value=adb_running), \
                 mock.patch("vitrina.app.adb.ensure_reverse", side_effect=cable), \
                 mock.patch("vitrina.app.adb.release", side_effect=release) as release, \
                 mock.patch("vitrina.app.PhotoLibrary", wraps=PhotoLibrary) as photos:
@@ -195,6 +195,12 @@ class PortTest(unittest.TestCase):
         release.assert_called_once_with(port, True)  # vitrina opened adb's daemon, so it closes it
         self.assert_port_free(port)
         self.assertIsNone(running_pid(self.secrets))
+
+    def test_someone_elses_adb_is_left_running(self):
+        # Android Studio or a debugging session opened adb's daemon before vitrina: only undo the reverse.
+        port = self.free_port()
+        _, _, release, _ = self.serve_until_long_sleep({"port": port, "wifi": False}, adb_running=True)
+        release.assert_called_once_with(port, False)
 
     def test_adb_is_released_after_the_cable_check_finishes(self):
         # A cable check still running would start adb's daemon again right after it's closed.

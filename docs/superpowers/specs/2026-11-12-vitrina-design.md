@@ -362,9 +362,11 @@ frenar a otro proceso. Candado tomado = hay un server; un segundo server dice "y
 vitrina lo usó por primera vez, lo cierra (`adb kill-server`); si ya estaba, lo deja (otro programa lo usa).
 Si no termina en unos segundos, `stop` lo mata. La pantalla del celu se apaga sola, como cuando la Mac se duerme.
 
-**Reposo.** Un hilo mira el reloj cada pocos segundos; si entre dos miradas pasó más de 1 h, la Mac durmió: el
-server lo anota en el log y se frena igual que con `stop`. Mirar seguido hace que se frene apenas la Mac
-despierta, antes de que el celu llegue a prenderse.
+**Reposo.** Un hilo mira cada pocos segundos cuánto durmió la Mac (el reloj de pared contra
+`CLOCK_UPTIME_RAW`, que no avanza mientras duerme) y lo va sumando. Mientras duerme, macOS se despierta unos
+segundos cada 15–20 min (Power Nap): eso no cuenta como despertar; la cuenta vuelve a cero recién con 5 min
+despierta seguidos. Con más de 1 h sumada, el server lo anota en el log y se frena igual que con `stop`.
+(Revisión 2026-11-14: la primera versión miraba el salto entre dos miradas, y Power Nap no la dejaba disparar.)
 
 **Log.** En segundo plano, la salida del server va a `~/Library/Application Support/vitrina/server.log` (`0600`,
 se pisa en cada `start`).
