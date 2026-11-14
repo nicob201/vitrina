@@ -104,12 +104,12 @@ this computer and asks Anthropic for your usage every 5 minutes:
   every request carries a secret key. Without the key the server answers nothing useful (`401`): not the
   page, not the data, not the photos.
 - **Secrets** live in `~/Library/Application Support/vitrina/` (private folder and files), never in the
-  repo or in `config.json`. On the phone the key is stored encrypted with the Android Keystore; the app's
-  web view also keeps it in its own private cookie store. The app's data is left out of backups and
-  phone-to-phone transfers.
+  repo or in `config.json`. On the phone the key is stored only encrypted with the Android Keystore: the
+  app makes every request for its page itself and sends the key as a header, so it never sits in a cookie.
+  The app's data is left out of backups and phone-to-phone transfers.
 - **Pairing only through adb** (USB, or Android's wireless debugging). Only adb can open the app's pairing
-  screen, so no other app on the phone can point vitrina at another server. **Pairing again changes the key**: any phone paired before (a lost
-  one, say) is locked out. Restart the server after pairing.
+  screen, so no other app on the phone can point vitrina at another server. **Pairing again changes the
+  key**: any phone paired before (a lost one, say) is locked out. Restart the server after pairing.
 - The page no longer opens in Chrome or any other browser: only the app can show it.
 - `"wifi": false` keeps the server off the network entirely; then only the cable works.
 - The server never starts by itself, only answers requests and never changes anything on your Mac.

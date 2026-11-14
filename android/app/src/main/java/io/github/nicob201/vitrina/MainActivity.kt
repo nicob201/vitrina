@@ -5,12 +5,10 @@ import android.app.Activity
 import android.app.KeyguardManager
 import android.app.NotificationManager
 import android.content.Intent
-import android.net.Uri
-import android.net.http.SslCertificate
-import android.net.http.SslError
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.LocaleList
 import android.os.Looper
 import android.view.MotionEvent
 import android.view.View
@@ -19,13 +17,14 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.webkit.CookieManager
-import android.webkit.SslErrorHandler
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import java.io.ByteArrayInputStream
+import java.io.IOException
 import kotlin.concurrent.thread
 import kotlin.math.hypot
 
@@ -33,7 +32,7 @@ import kotlin.math.hypot
 class MainActivity : Activity() {
     private lateinit var web: WebView
     private val main = Handler(Looper.getMainLooper())
-    private var info: PairingInfo? = null // the pairing the page is shown with
+    @Volatile private var info: PairingInfo? = null // the pairing the page is shown with (read by the web view's threads)
     private var loadedOrigin: String? = null // where the page came from; null while a message is shown
     private val retry = Runnable { connect() }
 
@@ -48,6 +47,13 @@ class MainActivity : Activity() {
             window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
         }
         web = buildWebView()
+        // The key never goes into a cookie (every request carries it as a header, see PinnedWebClient);
+        // also wipe any cookie an older version of the app left on disk.
+        CookieManager.getInstance().apply {
+            setAcceptCookie(false)
+            removeAllCookies(null)
+            flush()
+        }
         if (Build.VERSION.SDK_INT >= 33) {
             onBackInvokedDispatcher.registerOnBackInvokedCallback(0) {} // a kiosk has nowhere to go back to
         }
@@ -76,7 +82,6 @@ class MainActivity : Activity() {
             showView(Guide.view(this) { refresh() })
         } else if (current != info) {
             info = current // first start, new pairing, or a new WiFi address from the settings
-            web.clearSslPreferences() // forget certificates accepted for an earlier pairing
             connect()
         }
     }
@@ -131,7 +136,7 @@ class MainActivity : Activity() {
                 if (pairing != info) return@post // the pairing changed meanwhile
                 val answering = codes.firstOrNull { it.second == 200 }?.first
                 when {
-                    answering != null -> load(pairing, answering)
+                    answering != null -> load(answering)
                     codes.any { it.second == 401 } -> showProblem(R.string.repair_title, R.string.repair_how)
                     codes.any { it.second == PinnedClient.WRONG_CERT } ->
                         showProblem(R.string.not_your_mac_title, R.string.not_your_mac_detail)
@@ -141,20 +146,10 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun load(pairing: PairingInfo, origin: String) {
-        val cookies = CookieManager.getInstance()
-        val origins = Pairing.origins(pairing)
-        var pending = origins.size
-        for (o in origins) {
-            cookies.setCookie(o, "vitrina_key=${pairing.key}; Secure; HttpOnly; SameSite=Strict; Path=/") {
-                if (--pending == 0) {
-                    cookies.flush()
-                    loadedOrigin = origin
-                    setContentView(web)
-                    web.loadUrl("$origin/")
-                }
-            }
-        }
+    private fun load(origin: String) {
+        loadedOrigin = origin
+        setContentView(web)
+        web.loadUrl("$origin/")
     }
 
     /** Say what's wrong and keep trying: the Mac may start, or the right one come back. Nothing is sent before
@@ -189,30 +184,42 @@ class MainActivity : Activity() {
         webViewClient = PinnedWebClient()
     }
 
+    /**
+     * The web view never goes to the network itself: every request the page makes (the page, its data, the
+     * photos, the fonts) is made here, through PinnedClient — the Mac's certificate checked by fingerprint, the
+     * key as a header. So the key is never handed to the web view, and it never trusts any certificate itself
+     * (its own TLS errors keep the default: cancel).
+     */
     private inner class PinnedWebClient : WebViewClient() {
-        private fun allowed(url: String): Boolean {
-            val uri = Uri.parse(url)
-            val origin = "${uri.scheme}://${uri.host}:${uri.port}"
-            return info?.let { origin in Pairing.origins(it) } == true
-        }
-
-        override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
+        override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse {
             val pairing = info
-            val der = derOf(error.certificate)
-            if (pairing != null && der != null && allowed(error.url) && Pairing.matches(der, pairing.fingerprint)) {
-                handler.proceed()
-            } else {
-                handler.cancel()
-                showProblem(R.string.not_your_mac_title, R.string.not_your_mac_detail)
+            val url = request.url.toString()
+            if (pairing == null || request.method != "GET" || !Pairing.isPaired(url, pairing)) return empty(403)
+            return try {
+                val language = request.requestHeaders["Accept-Language"] ?: LocaleList.getDefault().toLanguageTags()
+                val conn = PinnedClient.open(url, pairing, mapOf("Accept-Language" to language), readTimeoutMs = 15_000)
+                val code = conn.responseCode
+                if (code !in 200..299 && code !in 400..599) { // 1xx/3xx: never sent by vitrina, not passed on
+                    conn.disconnect()
+                    return empty(502)
+                }
+                if (code == 401 && request.isForMainFrame) main.post { showProblem(R.string.repair_title, R.string.repair_how) }
+                val (mime, charset) = PinnedClient.contentType(conn.contentType)
+                val body = (if (code >= 400) conn.errorStream else conn.inputStream)
+                    ?: ByteArrayInputStream(ByteArray(0)).also { conn.disconnect() }
+                val headers = conn.headerFields
+                    .filterKeys { it != null && it.lowercase() !in HOP_HEADERS }
+                    .mapValues { it.value.joinToString(", ") }
+                WebResourceResponse(mime, charset, code, conn.responseMessage?.ifEmpty { null } ?: "OK", headers, body)
+            } catch (e: IOException) {
+                // The page's own requests turn this into "offline"; a failed page load waits and tries again.
+                if (request.isForMainFrame) main.post { showProblem(R.string.waiting_title, R.string.waiting_detail) }
+                empty(503)
             }
         }
 
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest) =
-            !allowed(request.url.toString()) // anything outside the paired Mac is blocked
-
-        override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, response: WebResourceResponse) {
-            if (request.isForMainFrame && response.statusCode == 401) showProblem(R.string.repair_title, R.string.repair_how)
-        }
+            info?.let { Pairing.isPaired(request.url.toString(), it) } != true // nothing outside the paired Mac
 
         override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
             if (request.isForMainFrame) showProblem(R.string.waiting_title, R.string.waiting_detail) // went away mid-load
@@ -269,8 +276,7 @@ class MainActivity : Activity() {
     }
 }
 
-/** The certificate's DER bytes: x509Certificate on API 29+, the saved-state bundle before that. */
-private fun derOf(cert: SslCertificate): ByteArray? {
-    if (Build.VERSION.SDK_INT >= 29) cert.x509Certificate?.let { return it.encoded }
-    return SslCertificate.saveState(cert).getByteArray("x509-certificate")
-}
+private val HOP_HEADERS = setOf("content-type", "content-length", "content-encoding", "transfer-encoding", "connection")
+
+private fun empty(code: Int) =
+    WebResourceResponse("text/plain", "utf-8", code, "vitrina", emptyMap(), ByteArrayInputStream(ByteArray(0)))

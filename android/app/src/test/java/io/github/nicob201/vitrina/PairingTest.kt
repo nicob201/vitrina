@@ -55,6 +55,16 @@ class PairingTest {
             Pairing.origins(Pairing.parse(key, fp, 8765, "192.168.0.10")!!))
     }
 
+    @Test fun onlyThePairedOriginsArePaired() {
+        val info = Pairing.parse(key, fp, 8765, "192.168.0.10")!!
+        for (ok in listOf("https://localhost:8765/", "https://192.168.0.10:8765/a.css?v=2", "HTTPS://LOCALHOST:8765/api/state"))
+            assertTrue(ok, Pairing.isPaired(ok, info))
+        for (bad in listOf("http://192.168.0.10:8765/", "https://192.168.0.10:8766/", "https://192.168.0.10/",
+                "https://192.168.0.10:8765@evil.example/", "https://evil.example:8765/", "https://192.168.0.11:8765/",
+                "javascript:alert(1)", "about:blank", "data:text/html,x", "not a url", ""))
+            assertFalse(bad, Pairing.isPaired(bad, info))
+    }
+
     @Test fun fingerprintOfKnownBytes() = assertEquals(abcFp, Pairing.fingerprintOf("abc".toByteArray()))
 
     @Test fun matchesOnlyTheSameCert() {

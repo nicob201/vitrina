@@ -105,12 +105,13 @@ computadora y le pregunta a Anthropic tu uso cada 5 minutos:
   en tu Mac, que la app reconoce por su huella (no confía en ningún otro), y cada pedido lleva una clave
   secreta. Sin la clave el server no responde nada útil (`401`): ni la página, ni los datos, ni las fotos.
 - **Los secretos** se guardan en `~/Library/Application Support/vitrina/` (carpeta y archivos privados),
-  nunca en el repo ni en `config.json`. En el celu la clave se guarda cifrada con el Keystore de Android;
-  además, la vista web de la app guarda una copia en su propio almacén privado de cookies. Los datos de la
-  app quedan fuera de los backups y de las transferencias entre celus.
+  nunca en el repo ni en `config.json`. En el celu la clave se guarda solo cifrada con el Keystore de
+  Android: la app hace ella misma cada pedido de la página y manda la clave en un header, así que nunca queda
+  en una cookie. Los datos de la app quedan fuera de los backups y de las transferencias entre celus.
 - **Emparejar es solo por adb** (USB, o la depuración inalámbrica de Android). Solo adb puede abrir la
-  pantalla de emparejar de la app, así ninguna otra app del celu puede apuntar vitrina a otro server. **Emparejar de nuevo cambia la clave**: cualquier
-  celu emparejado antes (uno perdido, por ejemplo) queda afuera. Después de emparejar, reiniciá el server.
+  pantalla de emparejar de la app, así ninguna otra app del celu puede apuntar vitrina a otro server.
+  **Emparejar de nuevo cambia la clave**: cualquier celu emparejado antes (uno perdido, por ejemplo) queda
+  afuera. Después de emparejar, reiniciá el server.
 - La página ya no se abre en Chrome ni en ningún otro navegador: solo la puede mostrar la app.
 - `"wifi": false` deja el server fuera de la red; ahí solo anda por cable.
 - El server nunca arranca solo, solo responde pedidos y nunca cambia nada en tu Mac. No expongas su

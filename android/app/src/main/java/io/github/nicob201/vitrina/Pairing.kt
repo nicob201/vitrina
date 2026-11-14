@@ -34,6 +34,19 @@ object Pairing {
     fun matches(certDer: ByteArray, expected: String): Boolean =
         MessageDigest.isEqual(fingerprintOf(certDer).toByteArray(), expected.toByteArray())
 
+    /** Whether [url] belongs to the paired Mac: exactly the scheme, host and port of one of its origins. */
+    fun isPaired(url: String, info: PairingInfo): Boolean {
+        val uri = try {
+            java.net.URI(url)
+        } catch (e: java.net.URISyntaxException) {
+            return false
+        }
+        if (uri.rawUserInfo != null) return false // "https://mac:8765@elsewhere/" goes elsewhere
+        val scheme = uri.scheme?.lowercase() ?: return false
+        val host = uri.host?.lowercase() ?: return false
+        return "$scheme://$host:${uri.port}" in origins(info)
+    }
+
     /** Cable (through `adb reverse`) first, then WiFi. */
     fun origins(info: PairingInfo): List<String> =
         listOfNotNull("https://localhost:${info.port}", info.wifiIp.takeIf { it.isNotEmpty() }?.let { "https://$it:${info.port}" })

@@ -304,23 +304,22 @@ repo ni en `config.json`:
 **El server.**
 - Sin emparejar, `python3 server.py` no arranca: avisa que primero hay que correr `python3 server.py pair`.
 - Siempre HTTPS (TLS 1.2 o más), también por cable.
-- Cada pedido necesita la clave: cookie `vitrina_key` (la pone la app en el WebView) o header
-  `Authorization: Bearer <clave>` (lo usa el sondeo en segundo plano). Comparación en tiempo constante
-  (`hmac.compare_digest`). Sin clave → `401`, sin nada útil en la respuesta.
+- Cada pedido necesita la clave en el header `Authorization: Bearer <clave>` (la app lo pone en todos sus
+  pedidos, también en los de la página; ninguna cookie). Comparación en tiempo constante
+  (`hmac.compare_digest`). Sin clave → `401`, sin nada útil en la respuesta (ni cuerpo ni versión del server).
 - Siguen: chequeo del `Host`, lista fija de archivos, solo `GET`, timeout de conexiones, `"wifi": false` para
   solo cable.
 - Nunca arranca solo.
 
 **La app.**
-- El WebView acepta el certificado solo si su huella coincide con la emparejada (`onReceivedSslError`); con
-  cualquier otro, no carga nada y muestra "No es tu Mac".
-- La clave va en la cookie `vitrina_key` (`Secure`, `HttpOnly`, `SameSite=Strict`) para el origen del server
-  (WiFi y `localhost`).
-- El sondeo en segundo plano usa su propio cliente HTTPS con la misma huella fijada y el header `Authorization`.
-- La clave se guarda cifrada con una clave del Android Keystore, en el almacenamiento privado de la app.
-  El WebView guarda además la cookie en su propio almacén privado (sin cifrar, como cualquier cookie de
-  Android); por eso los datos de la app quedan fuera de backups y transferencias entre celus, y el WebView
-  no confía en ninguna autoridad de certificados: todo pasa por la huella. (Nota de implementación, 2026-11-13.)
+- El WebView no sale a la red por su cuenta: la app hace cada pedido de la página (la página, los datos, las
+  fotos, las fuentes) con su propio cliente HTTPS, que acepta el certificado solo si su huella coincide con
+  la emparejada y manda la clave en el header `Authorization`. Con cualquier otro certificado no se manda
+  nada y la app muestra "No es tu Mac". El sondeo en segundo plano usa el mismo cliente.
+- La clave se guarda solo cifrada con una clave del Android Keystore, en el almacenamiento privado de la app:
+  el WebView nunca la recibe, así que no queda en ninguna cookie. Los datos de la app quedan fuera de backups
+  y transferencias entre celus, y el WebView no confía en ninguna autoridad de certificados.
+  (Revisión 2026-11-13, después de la revisión de código.)
 - Si el server responde `401` (se emparejó otro celu o se borró la clave en la Mac), la app muestra "Volvé a
   emparejar" con la misma explicación del primer arranque.
 
@@ -349,8 +348,9 @@ sigue como en el Plan 1; el cierre del server y la app llegan juntos.
   el README recomienda fotos de ~1600 px.
 - **Emparejamiento:** que la pantalla de emparejar de la app solo la pueda abrir `adb` (protegida con un permiso
   que solo tiene el shell, p. ej. `android.permission.DUMP`). Probarlo en el Nokia: otra app no debe poder abrirla.
-- **WebView con certificado propio:** reconocerlo por huella en `onReceivedSslError` y que la cookie con la clave
-  viaje en todos los pedidos (página, `fetch`, fotos). Probarlo en la prueba descartable del Nokia.
+- **WebView con certificado propio:** que todos los pedidos de la página (página, `fetch`, fotos) pasen por el
+  cliente fijado por huella de la app. Probado en el Nokia (la prueba descartable usó una cookie; la versión
+  final no usa ninguna).
 - **Open-Meteo:** confirmar si la atribución alcanza con el README o hay que mostrarla.
 
 ## 11. Lo que queda a criterio de quien construye
