@@ -64,7 +64,7 @@ notifications.
 | `city` | `""` | City for the weather. Empty = no weather |
 | `country` | `""` | Optional two-letter country code to pick the right city, e.g. `"AR"` |
 | `units` | `"celsius"` | `"celsius"` or `"fahrenheit"` |
-| `photos_dir` | `""` | Folder with photos. Empty = no photo panel |
+| `photos_dir` | `""` | Folder with photos. Empty = no photo panel. E.g.: `"~/Pictures/vitrina"` |
 
 A panel with nothing to show simply stays out of the rotation. When the server starts it prints which
 place it found for your city, so you can check it picked the right one.
@@ -119,8 +119,9 @@ this computer and asks Anthropic for your usage every 5 minutes:
 ## Photos
 
 JPEG, PNG and WebP. iPhone photos in HEIC need to be exported as JPEG first. Landscape photos fill the
-screen; portrait ones are shown whole over a blurred copy. If photos are slow to appear on an older
-phone, resize them to about 1600 px wide.
+screen; portrait ones are shown whole over a blurred copy. An older phone can't show very large photos
+(over about 4000 px, like 50 MP shots): they appear cut off. Resize them first; on a Mac,
+`sips -Z 1600 photo.jpg` shrinks one in place so its longest side is 1600 px.
 
 ## Development
 

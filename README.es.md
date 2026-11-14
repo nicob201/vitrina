@@ -65,7 +65,7 @@ permiso para sus notificaciones.
 | `city` | `""` | Ciudad para el clima. Vacío = sin clima |
 | `country` | `""` | Código de país de dos letras, opcional, para elegir bien la ciudad. Ej.: `"AR"` |
 | `units` | `"celsius"` | `"celsius"` o `"fahrenheit"` |
-| `photos_dir` | `""` | Carpeta de fotos. Vacío = sin panel de fotos |
+| `photos_dir` | `""` | Carpeta de fotos. Vacío = sin panel de fotos. Ej.: `"~/Pictures/vitrina"` |
 
 Un panel sin nada para mostrar queda afuera de la rotación. Al arrancar, el server muestra qué lugar
 encontró para tu ciudad, así ves que eligió el correcto.
@@ -121,8 +121,9 @@ computadora y le pregunta a Anthropic tu uso cada 5 minutos:
 ## Fotos
 
 JPEG, PNG y WebP. Las fotos de iPhone en HEIC hay que exportarlas a JPEG primero. Las horizontales ocupan
-toda la pantalla; las verticales se ven enteras sobre una copia desenfocada. Si en un celu viejo las fotos
-tardan en aparecer, achicalas a unos 1600 px de ancho.
+toda la pantalla; las verticales se ven enteras sobre una copia desenfocada. Un celu viejo no puede mostrar
+fotos muy grandes (de más de unos 4000 px, como las de 50 MP): se ven cortadas. Achicalas antes; en la Mac,
+`sips -Z 1600 foto.jpg` la achica en el lugar para que su lado más largo mida 1600 px.
 
 ## Desarrollo
 
