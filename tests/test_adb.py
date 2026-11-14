@@ -1,7 +1,7 @@
 import subprocess
 import unittest
 
-from vitrina.adb import ensure_reverse
+from vitrina.adb import ensure_reverse, release
 
 
 class FakeRun:
@@ -51,6 +51,32 @@ class EnsureReverseTest(unittest.TestCase):
         ):
             with self.subTest(run=run):
                 self.assertFalse(ensure_reverse(8765, run=run, which=which))
+
+
+class ReleaseTest(unittest.TestCase):
+    def test_release_without_adb_or_daemon_runs_nothing(self):
+        # Running adb with no daemon up would start one: the opposite of releasing.
+        for kwargs in ({"which": lambda name: None, "running": lambda: True},
+                       {"which": which, "running": lambda: False}):
+            with self.subTest(kwargs=kwargs):
+                run = FakeRun("")
+                release(8765, True, run=run, **kwargs)
+                self.assertEqual(run.calls, [])
+
+    def test_release_kills_the_daemon_vitrina_opened(self):
+        run = FakeRun("")
+        release(8765, True, run=run, which=which, running=lambda: True)
+        self.assertEqual(run.calls[-1], ["adb", "kill-server"])
+
+    def test_release_leaves_someone_elses_daemon(self):
+        run = FakeRun("")
+        release(8765, False, run=run, which=which, running=lambda: True)
+        self.assertEqual(run.calls, [["adb", "reverse", "--remove", "tcp:8765"]])
+
+    def test_release_ignores_errors(self):
+        for error in (subprocess.TimeoutExpired("adb", 5), FileNotFoundError("adb")):
+            with self.subTest(error=error):
+                release(8765, True, run=FakeRun("", error=error), which=which, running=lambda: True)
 
 
 if __name__ == "__main__":

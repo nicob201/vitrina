@@ -7,7 +7,7 @@ import threading
 from datetime import datetime
 from pathlib import Path
 
-from . import adb, net
+from . import adb, control, net
 from .claude import USAGE_URL, parse_usage, read_token, usage_headers
 from .config import ConfigError, load_config
 from .github import contributions_url, parse_contributions
@@ -29,8 +29,12 @@ def log(message: str) -> None:
 
 def main(argv: list[str] | None = None, root: Path = ROOT, secrets_dir: Path = SECRETS_DIR) -> int:
     argv = argv or []
+    if argv == ["start"]:
+        return control.start([sys.executable, str(root / "server.py")], secrets_dir)
+    if argv == ["stop"]:
+        return control.stop(secrets_dir)
     if argv not in ([], ["pair"]):
-        log("Usage: python3 server.py [pair]")
+        log("Usage: python3 server.py [start | stop | pair]")
         return 2
     try:
         cfg, created = load_config(root / "config.json", root / "config.example.json")
@@ -64,9 +68,13 @@ def main(argv: list[str] | None = None, root: Path = ROOT, secrets_dir: Path = S
     except OSError:  # ssl.SSLError included: a damaged certificate or key
         log("Can't read the certificate. Plug in the phone and run: python3 server.py pair")
         return 1
+    if control.running_pid(secrets_dir) is not None:
+        log("vitrina is already running.")
+        return 1
 
     store = Store()
-    photos = PhotoLibrary(Path(cfg.photos_dir).expanduser() if cfg.photos_dir else None)
+    # A relative folder is beside config.json, whatever folder the server was started from.
+    photos = PhotoLibrary(root / Path(cfg.photos_dir).expanduser() if cfg.photos_dir else None)
 
     def get_state(accept_language: str | None, link: str) -> dict:
         lang = pick_language(cfg.language, accept_language)
@@ -86,21 +94,33 @@ def main(argv: list[str] | None = None, root: Path = ROOT, secrets_dir: Path = S
         return 1
 
     stop = threading.Event()
+    own_adb = not adb.daemon_running()  # if the server opens adb's daemon, it closes it when it stops
     _start_sources(cfg, store, photos, stop)
+
+    def on_long_sleep() -> None:
+        # The Mac may wake on another network (a café): don't come back listening there.
+        log("The Mac slept for over an hour. Stopping.")
+        server.shutdown()
+    control.watch_sleep(on_long_sleep, stop)
 
     log("vitrina is running")
     ip = net.lan_ip() if cfg.wifi else None
     if ip:
         log(f"  WiFi:  https://{ip}:{cfg.port}")
     log(f"  Cable: https://localhost:{cfg.port}")
-    log("Press Ctrl+C to stop.")
+    log("To stop it: python3 server.py stop")
+    lock = control.hold_lock(secrets_dir)  # after the lines above, so `start` can show all of them
     try:
         server.serve_forever()
-    except KeyboardInterrupt:
-        log("Stopped.")
+    except KeyboardInterrupt:  # Ctrl+C, or SIGTERM from `stop` (see server.py)
+        pass
     finally:
         stop.set()
         server.server_close()
+        adb.release(cfg.port, own_adb)
+        if lock:
+            lock.close()
+        log("Stopped.")
     return 0
 
 
