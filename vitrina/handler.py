@@ -7,7 +7,6 @@ import mimetypes
 import re
 import ssl
 import sys
-from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Callable
@@ -57,6 +56,10 @@ def make_server(
 
     class Handler(BaseHTTPRequestHandler):
         timeout = REQUEST_TIMEOUT
+        error_message_format = ""  # errors before the key check (bad method, huge line) say nothing either
+
+        def version_string(self) -> str:
+            return "vitrina"  # not "BaseHTTP/0.6 Python/3.9.6"
 
         def setup(self) -> None:
             # The handshake runs in this connection's own thread, under the timeout,
@@ -94,12 +97,12 @@ def make_server(
 
         def _has_key(self) -> bool:
             offered = []
-            try:
-                morsel = SimpleCookie(self.headers.get("Cookie") or "").get("vitrina_key")
-                if morsel is not None:
-                    offered.append(morsel.value)
-            except CookieError:
-                pass
+            # Parsed by hand: SimpleCookie takes quadratic time on some inputs (CVE-2024-7592),
+            # and this runs before the key is known to be good.
+            for part in (self.headers.get("Cookie") or "").split(";"):
+                name, _, value = part.strip().partition("=")
+                if name == "vitrina_key":
+                    offered.append(value)
             auth = self.headers.get("Authorization") or ""
             if auth.startswith("Bearer "):
                 offered.append(auth[len("Bearer "):])

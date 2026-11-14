@@ -5,6 +5,7 @@ import socket
 import ssl
 import tempfile
 import threading
+import time
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
@@ -164,6 +165,28 @@ class HandlerTest(unittest.TestCase):
         for auth in ("Bearer nope", "Bearer ", "Basic s3cret", "s3cret", "Bearer ñ"):
             with self.subTest(auth=auth):
                 self.assertEqual(self.get("/", {"Authorization": auth}, key=None)[0].status, 401)
+
+    def test_a_hostile_cookie_cannot_stall_the_server(self):
+        # CVE-2024-7592: SimpleCookie in Python 3.9 takes quadratic time on quoted backslashes.
+        hostile = 'vitrina_key="' + "\\" * 30000 + '"'
+        start = time.monotonic()
+        resp, body = self.get("/api/state", {"Cookie": hostile}, key=None)
+        self.assertEqual((resp.status, body), (401, b""))
+        self.assertLess(time.monotonic() - start, 0.5)
+
+    def test_strangers_learn_nothing_about_the_server(self):
+        ctx = ssl.create_default_context(cafile=str(self.cert))
+        ctx.check_hostname = False
+        for method, path in (("GET", "/"), ("POST", "/"), ("HEAD", "/api/state"), ("GET", "/" + "x" * 70000)):
+            with self.subTest(method=method, path=path[:10]):
+                conn = http.client.HTTPSConnection("127.0.0.1", self.server.server_address[1], timeout=5, context=ctx)
+                conn.request(method, path)
+                resp = conn.getresponse()
+                body = resp.read()
+                conn.close()
+                self.assertEqual(body, b"")
+                self.assertNotIn("Python", resp.getheader("Server") or "")
+                self.assertNotIn("BaseHTTP", resp.getheader("Server") or "")
 
     def test_key_among_other_cookies_works(self):
         self.assertEqual(self.get("/", {"Cookie": "a=1; vitrina_key=s3cret; b=2"}, key=None)[0].status, 200)
