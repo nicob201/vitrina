@@ -6,6 +6,7 @@
 
     <string name="unpaired_title">Not paired yet</string>
     <string name="repair_title">Pair again</string>
+    <string name="repair_how">Just paired? Restart vitrina on the Mac.\nIf not, plug the phone into the Mac and run: python3 server.py pair</string>
     <string name="pair_how">Plug the phone into the Mac and run: python3 server.py pair</string>
     <string name="waiting_title">Waiting for the Mac…</string>
     <string name="waiting_detail">Start vitrina on the Mac: python3 server.py\nAlready running? Hold a finger still for 3 seconds to check the Mac\'s WiFi address.</string>

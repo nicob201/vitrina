@@ -78,6 +78,9 @@ class SettingsActivity : Activity() {
             column.addView(text(getString(R.string.settings_no_other_home), 16f, R.color.mist).apply { setPadding(0, pad / 2, 0, 0) })
             return
         }
+        // Leaving vitrina also stops following the Mac, so it won't jump over the app the user opens next.
+        // Coming back to vitrina (it's the home screen) starts it again.
+        stopService(Intent(this, PollService::class.java))
         startActivity(home.setClassName(other.packageName, other.name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         finish()
     }

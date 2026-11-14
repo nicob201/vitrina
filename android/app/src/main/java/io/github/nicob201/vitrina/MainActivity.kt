@@ -76,6 +76,7 @@ class MainActivity : Activity() {
             showView(Guide.view(this) { refresh() })
         } else if (current != info) {
             info = current // first start, new pairing, or a new WiFi address from the settings
+            web.clearSslPreferences() // forget certificates accepted for an earlier pairing
             connect()
         }
     }
@@ -87,6 +88,7 @@ class MainActivity : Activity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        getSystemService(NotificationManager::class.java).cancel(PollService.WAKE_ID)
         if (intent.getBooleanExtra(PollService.EXTRA_RELOAD, false) && info != null) connect() // the Mac is back
     }
 
@@ -130,7 +132,7 @@ class MainActivity : Activity() {
                 val answering = codes.firstOrNull { it.second == 200 }?.first
                 when {
                     answering != null -> load(pairing, answering)
-                    codes.any { it.second == 401 } -> showProblem(R.string.repair_title, R.string.pair_how)
+                    codes.any { it.second == 401 } -> showProblem(R.string.repair_title, R.string.repair_how)
                     codes.any { it.second == PinnedClient.WRONG_CERT } ->
                         showProblem(R.string.not_your_mac_title, R.string.not_your_mac_detail)
                     else -> showProblem(R.string.waiting_title, R.string.waiting_detail)
@@ -209,7 +211,7 @@ class MainActivity : Activity() {
             !allowed(request.url.toString()) // anything outside the paired Mac is blocked
 
         override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, response: WebResourceResponse) {
-            if (request.isForMainFrame && response.statusCode == 401) showProblem(R.string.repair_title, R.string.pair_how)
+            if (request.isForMainFrame && response.statusCode == 401) showProblem(R.string.repair_title, R.string.repair_how)
         }
 
         override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {

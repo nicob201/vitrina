@@ -46,9 +46,10 @@ vitrina is running
 Press Ctrl+C to stop.
 ```
 
-vitrina opens on the phone by itself. The first time it walks you through three phone settings so the
-screen can follow the Mac: make vitrina the **home screen**, a **screen timeout** of one minute or less,
-and **Stay awake** (Developer options) turned off.
+vitrina opens on the phone by itself. The first time it walks you through the phone settings the screen
+needs to follow the Mac: make vitrina the **home screen**, a **screen timeout** of one minute or less,
+**Stay awake** (Developer options) turned off and, on newer Android versions, permission for its
+notifications.
 
 ## Settings (`config.json`)
 
@@ -75,6 +76,8 @@ place it found for your city, so you can check it picked the right one.
   the pairing. The corner of the screen says which one is in use.
 - **The screen follows the Mac.** It stays on while vitrina runs on the Mac, turns off about a minute
   after it stops, and turns back on when it starts again. The power button still works.
+- **After the phone restarts** vitrina comes back by itself; if the phone has a PIN or pattern, once you
+  unlock it.
 - **Tap** to jump to the next panel. If the Mac goes away, the clock keeps running, the last data stays
   on screen and an "offline" mark appears until it's back.
 - **Hold a finger still for 3 seconds** for the app's settings: change the Mac's Wi‑Fi address (if your
@@ -101,9 +104,11 @@ this computer and asks Anthropic for your usage every 5 minutes:
   every request carries a secret key. Without the key the server answers nothing useful (`401`): not the
   page, not the data, not the photos.
 - **Secrets** live in `~/Library/Application Support/vitrina/` (private folder and files), never in the
-  repo or in `config.json`. On the phone the key is stored encrypted with the Android Keystore.
-- **Pairing only over USB.** Only adb can open the app's pairing screen, so no other app on the phone can
-  point vitrina at another server. **Pairing again changes the key**: any phone paired before (a lost
+  repo or in `config.json`. On the phone the key is stored encrypted with the Android Keystore; the app's
+  web view also keeps it in its own private cookie store. The app's data is left out of backups and
+  phone-to-phone transfers.
+- **Pairing only through adb** (USB, or Android's wireless debugging). Only adb can open the app's pairing
+  screen, so no other app on the phone can point vitrina at another server. **Pairing again changes the key**: any phone paired before (a lost
   one, say) is locked out. Restart the server after pairing.
 - The page no longer opens in Chrome or any other browser: only the app can show it.
 - `"wifi": false` keeps the server off the network entirely; then only the cable works.

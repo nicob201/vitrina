@@ -318,6 +318,9 @@ repo ni en `config.json`:
   (WiFi y `localhost`).
 - El sondeo en segundo plano usa su propio cliente HTTPS con la misma huella fijada y el header `Authorization`.
 - La clave se guarda cifrada con una clave del Android Keystore, en el almacenamiento privado de la app.
+  El WebView guarda además la cookie en su propio almacén privado (sin cifrar, como cualquier cookie de
+  Android); por eso los datos de la app quedan fuera de backups y transferencias entre celus, y el WebView
+  no confía en ninguna autoridad de certificados: todo pasa por la huella. (Nota de implementación, 2026-11-13.)
 - Si el server responde `401` (se emparejó otro celu o se borró la clave en la Mac), la app muestra "Volvé a
   emparejar" con la misma explicación del primer arranque.
 

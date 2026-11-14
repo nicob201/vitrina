@@ -47,9 +47,10 @@ vitrina is running
 Press Ctrl+C to stop.
 ```
 
-vitrina se abre sola en el celu. La primera vez te guía por tres ajustes del celu para que la pantalla
-pueda seguir a la Mac: vitrina como **pantalla de inicio**, **tiempo de pantalla** de un minuto o menos y
-**Permanecer activo** (Opciones para desarrolladores) apagado.
+vitrina se abre sola en el celu. La primera vez te guía por los ajustes del celu que hacen falta para
+que la pantalla siga a la Mac: vitrina como **pantalla de inicio**, **tiempo de pantalla** de un minuto o
+menos, **Permanecer activo** (Opciones para desarrolladores) apagado y, en versiones nuevas de Android,
+permiso para sus notificaciones.
 
 ## Configuración (`config.json`)
 
@@ -77,6 +78,8 @@ encontró para tu ciudad, así ves que eligió el correcto.
 - **La pantalla sigue a la Mac.** Queda prendida mientras vitrina corre en la Mac, se apaga más o menos
   un minuto después de que se corta y se vuelve a prender cuando arranca. El botón de encendido sigue
   andando.
+- **Después de reiniciar el celu** vitrina vuelve sola; si el celu tiene PIN o patrón, cuando lo
+  desbloqueás.
 - **Tocá** para pasar al panel siguiente. Si se va la Mac, el reloj sigue andando, quedan los últimos
   datos y aparece "sin conexión" hasta que vuelva.
 - **Dejá el dedo quieto 3 segundos** para los ajustes de la app: cambiar la dirección WiFi de la Mac (si
@@ -102,9 +105,11 @@ computadora y le pregunta a Anthropic tu uso cada 5 minutos:
   en tu Mac, que la app reconoce por su huella (no confía en ningún otro), y cada pedido lleva una clave
   secreta. Sin la clave el server no responde nada útil (`401`): ni la página, ni los datos, ni las fotos.
 - **Los secretos** se guardan en `~/Library/Application Support/vitrina/` (carpeta y archivos privados),
-  nunca en el repo ni en `config.json`. En el celu la clave se guarda cifrada con el Keystore de Android.
-- **Emparejar es solo por USB.** Solo adb puede abrir la pantalla de emparejar de la app, así ninguna
-  otra app del celu puede apuntar vitrina a otro server. **Emparejar de nuevo cambia la clave**: cualquier
+  nunca en el repo ni en `config.json`. En el celu la clave se guarda cifrada con el Keystore de Android;
+  además, la vista web de la app guarda una copia en su propio almacén privado de cookies. Los datos de la
+  app quedan fuera de los backups y de las transferencias entre celus.
+- **Emparejar es solo por adb** (USB, o la depuración inalámbrica de Android). Solo adb puede abrir la
+  pantalla de emparejar de la app, así ninguna otra app del celu puede apuntar vitrina a otro server. **Emparejar de nuevo cambia la clave**: cualquier
   celu emparejado antes (uno perdido, por ejemplo) queda afuera. Después de emparejar, reiniciá el server.
 - La página ya no se abre en Chrome ni en ningún otro navegador: solo la puede mostrar la app.
 - `"wifi": false` deja el server fuera de la red; ahí solo anda por cable.

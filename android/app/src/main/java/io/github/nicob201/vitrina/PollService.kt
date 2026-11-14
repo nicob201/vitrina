@@ -66,11 +66,15 @@ class PollService : Service() {
                 }
             }
             val actions = machine.onPoll(origin != null)
-            if (actions.wake) wake()
+            // Wake only when vitrina isn't already in front (it listens while resumed). The page then
+            // reloads from the wake intent; otherwise from the listener: once either way.
+            val woke = actions.wake && ScreenBus.listener == null
+            if (woke) wake()
             showStatus(origin != null)
+            val delivered = actions.copy(reload = actions.reload && !woke)
             main.post {
-                ScreenBus.last = actions
-                ScreenBus.listener?.invoke(actions, origin, repair)
+                ScreenBus.last = delivered
+                ScreenBus.listener?.invoke(delivered, origin, repair)
             }
             try {
                 Thread.sleep(POLL_MS)
