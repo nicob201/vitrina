@@ -326,6 +326,54 @@ repo ni en `config.json`:
 **Lo que se pierde.** La página ya no se ve en Chrome ni en ningún navegador. Hasta que la app exista, el server
 sigue como en el Plan 1; el cierre del server y la app llegan juntos.
 
+## 8c. Arrancar y frenar desde cualquier terminal (revisión 2026-11-14)
+
+Pedido del usuario: no tener que entrar a la carpeta y correr `python3 server.py` cada vez, poder frenarlo desde
+cualquier lado ("no sé dónde está corriendo el server": quedó uno corriendo sin terminal) y que al frenarlo se
+libere todo lo que vitrina usa de la Mac. Y el ícono de la app, que no tenía.
+
+**Enfoques considerados.**
+
+| Tema | Opciones | Elegida y por qué |
+|---|---|---|
+| Acceso | (a) dos apps de Mac (`osacompile`) en el Dock; (b) dos `.command` que abren la Terminal; **(c) comandos de terminal** | **(c)**, elección del usuario. |
+| Desde cualquier carpeta | **(a) enlace en `~/.local/bin`** (ya en el PATH); (b) alias en `~/.zshrc`; (c) instalador | **(a)**. (b) toca el perfil del usuario; (c) suma dependencias. |
+| Reposo largo | (a) seguir como hasta ahora; **(b) frenarse si la Mac durmió más de 1 h** | **(b)**. Mientras duerme el server no usa nada, pero la Mac pudo cambiar de red (de casa a un café) y el server despertaría escuchando ahí. Costo: después de un reposo largo hay que correr `vitrina start`. |
+
+**Comandos.** `server.py` es ejecutable (`#!/usr/bin/env python3`) y `~/.local/bin/vitrina` es un enlace a él.
+`python3 server.py ...` sigue andando igual.
+
+- `vitrina` (sin nada): como hoy, en primer plano; Ctrl+C lo frena.
+- `vitrina start`: lo arranca en segundo plano, desconectado de la terminal (se puede cerrar). Espera a que
+  esté sirviendo y muestra lo mismo que el arranque normal (direcciones); si no arranca (sin emparejar, puerto
+  ocupado), muestra el error y termina con error. Si ya estaba corriendo, lo dice.
+- `vitrina stop`: encuentra el server donde sea que esté corriendo (en segundo plano o en otra terminal) y lo
+  frena. Si no estaba corriendo, lo dice.
+- `vitrina pair`: igual que hoy.
+
+**Encontrar el server.** Todo server que arranca toma un candado (`fcntl.flock`) sobre
+`~/Library/Application Support/vitrina/server.pid` (`0600`), con su número de proceso adentro, y lo tiene hasta
+que termina. El sistema suelta el candado aunque el proceso muera de golpe, así un archivo viejo nunca hace
+frenar a otro proceso. Candado tomado = hay un server; un segundo server dice "ya está corriendo" en vez de
+"puerto ocupado".
+
+**Frenar libera todo.** `stop` le manda `SIGTERM`; el server lo trata igual que Ctrl+C: deja de escuchar
+(libera el puerto), corta los hilos y saca el `adb reverse`. Si el daemon de `adb` no estaba corriendo cuando
+vitrina lo usó por primera vez, lo cierra (`adb kill-server`); si ya estaba, lo deja (otro programa lo usa).
+Si no termina en unos segundos, `stop` lo mata. La pantalla del celu se apaga sola, como cuando la Mac se duerme.
+
+**Reposo.** Un hilo mira el reloj cada pocos segundos; si entre dos miradas pasó más de 1 h, la Mac durmió: el
+server lo anota en el log y se frena igual que con `stop`. Mirar seguido hace que se frene apenas la Mac
+despierta, antes de que el celu llegue a prenderse.
+
+**Log.** En segundo plano, la salida del server va a `~/Library/Application Support/vitrina/server.log` (`0600`,
+se pisa en cada `start`).
+
+**Ícono de la app.** Ícono adaptable (Android 8+, ya es el mínimo de la app): la pantallita sobre un soporte del
+ícono de notificación, color `moon` sobre fondo `night`.
+
+**No cambia.** Nada arranca solo: `start` lo corre el usuario. Sin emparejar no arranca.
+
 ## 9. Pruebas
 
 - **Server (TDD):** `python -m unittest`, sin dependencias. Las llamadas a internet y la hora actual entran
@@ -345,7 +393,8 @@ sigue como en el Plan 1; el cierre del server y la app llegan juntos.
 - **Claude:** forma del JSON del Keychain (confirmada en uso real el 2026-11-12).
 - **GitHub:** formato actual del HTML y zona horaria de los días (afecta "hoy" y la racha).
 - **Fotos grandes** (12 MP) en un CPU lento: el server no puede achicarlas sin dependencias. Medir; si traba,
-  el README recomienda fotos de ~1600 px.
+  el README recomienda fotos de ~1600 px. *Medido 2026-11-14 en el Nokia:* hasta 12 MP (4032 px) se ven bien;
+  una de 50 MP se ve cortada. El usuario eligió achicarlas a mano (`sips -Z 1600`); el README lo explica.
 - **Emparejamiento:** que la pantalla de emparejar de la app solo la pueda abrir `adb` (protegida con un permiso
   que solo tiene el shell, p. ej. `android.permission.DUMP`). Probarlo en el Nokia: otra app no debe poder abrirla.
 - **WebView con certificado propio:** que todos los pedidos de la página (página, `fetch`, fotos) pasen por el
