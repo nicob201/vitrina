@@ -5,10 +5,10 @@
 
     <string name="unpaired_title">Todavía no está emparejado</string>
     <string name="repair_title">Volvé a emparejar</string>
-    <string name="repair_how">¿Recién emparejaste? Reiniciá vitrina en la Mac.\nSi no, enchufá el celu a la Mac y corré: python3 server.py pair</string>
-    <string name="pair_how">Enchufá el celu a la Mac y corré: python3 server.py pair</string>
+    <string name="repair_how">¿Recién emparejaste? Reiniciá vitrina en la Mac.\nSi no, enchufá el celu a la Mac y corré: vitrina pair</string>
+    <string name="pair_how">Enchufá el celu a la Mac y corré: vitrina pair</string>
     <string name="waiting_title">Esperando a la Mac…</string>
-    <string name="waiting_detail">Arrancá vitrina en la Mac: python3 server.py\n¿Ya está corriendo? Dejá el dedo quieto 3 segundos para revisar la dirección WiFi de la Mac.</string>
+    <string name="waiting_detail">Arrancá vitrina en la Mac: vitrina start\n¿Ya está corriendo? Dejá el dedo quieto 3 segundos para revisar la dirección WiFi de la Mac.</string>
     <string name="not_your_mac_title">No es tu Mac</string>
     <string name="not_your_mac_detail">El server en esta dirección no es el que emparejaste. Si lo cambiaste, volvé a emparejar.</string>
 
