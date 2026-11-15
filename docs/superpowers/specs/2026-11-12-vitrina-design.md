@@ -376,6 +376,40 @@ se pisa en cada `start`).
 
 **No cambia.** Nada arranca solo: `start` lo corre el usuario. Sin emparejar no arranca.
 
+## 8d. Release v1.0.0 y repo público (revisión 2026-11-15)
+
+Pedido del usuario: cerrar el proyecto como v1, pasar el repo a público y publicar el release v1.0.0 con la app
+lista para instalar, así nadie necesita JDK ni el SDK de Android. (La web para mostrarlo viene después, aparte.)
+
+**Enfoques considerados (firma del APK).**
+
+| Opción | Costo | Elegida y por qué |
+|---|---|---|
+| **(a) Firmar en la Mac, a mano** | Hay que guardar la clave de firma con backup | **(a)**, elección del usuario. La clave nunca sale de la Mac. |
+| (b) GitHub Actions firma en cada tag | La clave vive en GitHub y el repo suma una acción automática | Más superficie de ataque a cambio de poco. |
+| (c) Sin APK, solo código | Instalar sigue pidiendo JDK + SDK | Rompe lo prometido (§8: "se distribuye como APK"). |
+
+**Firma.** Clave nueva (`keytool`, RSA 4096, ~27 años) en `~/Library/Application Support/vitrina-release/`
+(carpeta `0700`, archivo `0600`), fuera del repo; su contraseña en el Llavero de macOS. Gradle firma el release
+solo si recibe la clave por variables de entorno: sin ellas, el build de release sale sin firmar y nadie más
+necesita nada. `*.jks` y `*.keystore` van al `.gitignore` por las dudas. **El usuario hace backup de la clave y
+su contraseña**: sin ellas no se puede publicar una actualización que se instale encima de la v1.
+
+**Versión.** La app pasa a `versionName "1.0.0"`. El APK se publica como `vitrina-1.0.0.apk` en el release
+`v1.0.0` (tag anotado sobre `main`), con su SHA-256 en las notas (en inglés y castellano) para poder verificarlo.
+
+**Textos.** Todo lo que el server y la app le dicen al usuario usa el comando `vitrina` (`vitrina start`,
+`vitrina stop`, `vitrina pair`) en vez de `python3 server.py`. El README pone el enlace de `vitrina` como paso de
+la instalación y mantiene el equivalente con `python3 server.py` para quien no lo configure. La instalación de la
+app pasa a ser: bajar el APK del release, verificar el SHA-256 y `adb install`; compilarla queda en "Development".
+
+**Repo público.** Antes: la IP real de la Mac en un test (`PairingTest.kt`) pasa a una de ejemplo; el historial
+se revisó y no tiene secretos (el email de los commits queda, decisión del usuario). Al publicar: protección contra
+secretos de GitHub (secret scanning + push protection) activada. Los detalles menores pendientes quedan como issues.
+
+**Verificación.** Tests del server y de la app; `apksigner verify` del APK; en el Nokia: desinstalar la versión de
+desarrollo (firma distinta), instalar el APK del release, emparejar y ver los paneles.
+
 ## 9. Pruebas
 
 - **Server (TDD):** `python -m unittest`, sin dependencias. Las llamadas a internet y la hora actual entran
