@@ -35,8 +35,7 @@ Si `~/.local/bin` todavía no está en tu PATH, agregalo y abrí una terminal nu
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
 ```
 
-Después corré `vitrina` (en una terminal donde el comando todavía no se encuentra, `python3 server.py` hace
-lo mismo). La primera vez crea `config.json` y avisa que falta emparejar:
+Después corré `vitrina`. La primera vez crea `config.json` y avisa que falta emparejar:
 
 ```sh
 vitrina
@@ -68,7 +67,8 @@ permiso para sus notificaciones.
 
 ## Arrancar y frenar
 
-Sin el enlace de `vitrina` (ver Arranque rápido), `python3 server.py <comando>` desde la carpeta del proyecto hace lo mismo.
+Sin el enlace de `vitrina` (ver Arranque rápido), `python3 server.py <comando>` desde la carpeta del proyecto
+hace lo mismo.
 
 | Comando | Qué hace |
 |---|---|

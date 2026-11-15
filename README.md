@@ -35,8 +35,7 @@ If `~/.local/bin` isn't in your PATH yet, add it and open a new terminal:
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
 ```
 
-Then run `vitrina` (in a terminal where the command isn't found yet, `python3 server.py` does the same). The
-first run creates `config.json` and says it isn't paired yet:
+Then run `vitrina`. The first run creates `config.json` and says it isn't paired yet:
 
 ```sh
 vitrina
@@ -68,7 +67,8 @@ notifications.
 
 ## Starting and stopping
 
-Without the `vitrina` link (see Quick start), `python3 server.py <command>` from the project folder does the same.
+Without the `vitrina` link (see Quick start), `python3 server.py <command>` from the project folder does the
+same.
 
 | Command | What it does |
 |---|---|
