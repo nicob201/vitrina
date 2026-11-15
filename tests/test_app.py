@@ -85,7 +85,7 @@ class PortTest(unittest.TestCase):
         port = self.free_port()
         code, out = self.run_main(port, paired=False)
         self.assertEqual(code, 1)
-        self.assertIn("python3 server.py pair", out)
+        self.assertIn("vitrina pair", out)
         self.assert_port_free(port)
 
     def test_a_missing_certificate_counts_as_unpaired(self):
@@ -94,7 +94,7 @@ class PortTest(unittest.TestCase):
         port = self.free_port()
         code, out = self.run_main(port, paired=False)
         self.assertEqual(code, 1)
-        self.assertIn("python3 server.py pair", out)
+        self.assertIn("vitrina pair", out)
         self.assert_port_free(port)
 
     def test_a_broken_certificate_is_a_message(self):
@@ -102,7 +102,7 @@ class PortTest(unittest.TestCase):
         (self.secrets / "cert.pem").write_text("not a certificate")
         code, out = self.run_main(self.free_port(), paired=False)
         self.assertEqual(code, 1)
-        self.assertIn("python3 server.py pair", out)
+        self.assertIn("vitrina pair", out)
         self.assertNotIn("Traceback", out)
 
     def test_pair_errors_are_messages(self):
@@ -132,7 +132,7 @@ class PortTest(unittest.TestCase):
         out = io.StringIO()
         with redirect_stdout(out):
             self.assertEqual(main(["nope"], self.root, self.secrets), 2)
-        self.assertIn("Usage: python3 server.py [start | stop | pair]", out.getvalue())
+        self.assertIn("Usage: vitrina [start | stop | pair]", out.getvalue())
         self.assertFalse((self.root / "config.json").exists())  # nothing done
 
     def test_stop_needs_no_config(self):
@@ -191,6 +191,7 @@ class PortTest(unittest.TestCase):
         code, out, release, _ = self.serve_until_long_sleep({"port": port, "wifi": False})
         self.assertEqual(code, 0)
         self.assertIn("slept for over an hour", out)
+        self.assertIn("To stop it: vitrina stop", out)
         self.assertIn("Stopped.", out)
         release.assert_called_once_with(port, True)  # vitrina opened adb's daemon, so it closes it
         self.assert_port_free(port)
@@ -231,7 +232,7 @@ class PortTest(unittest.TestCase):
         link.symlink_to(REPO / "server.py")
         done = subprocess.run([str(link), "nope"], cwd=self.root, capture_output=True, text=True, timeout=10)
         self.assertEqual(done.returncode, 2, done.stderr)
-        self.assertIn("Usage: python3 server.py [start | stop | pair]", done.stdout)
+        self.assertIn("Usage: vitrina [start | stop | pair]", done.stdout)
 
 
 if __name__ == "__main__":

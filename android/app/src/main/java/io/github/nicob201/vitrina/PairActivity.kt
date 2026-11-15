@@ -13,7 +13,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 
 /**
- * Takes the pairing from `python3 server.py pair`. Only adb's shell can open it: the manifest guards it
+ * Takes the pairing from `vitrina pair`. Only adb's shell can open it: the manifest guards it
  * with android.permission.DUMP, which no regular app can hold.
  */
 class PairActivity : Activity() {
