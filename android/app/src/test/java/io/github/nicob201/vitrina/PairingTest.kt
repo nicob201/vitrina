@@ -40,7 +40,7 @@ class PairingTest {
     }
 
     @Test fun ipv4Literals() {
-        for (ok in listOf("0.0.0.0", "10.0.0.1", "192.168.100.233", "255.255.255.255")) assertTrue(ok, Pairing.isIpv4(ok))
+        for (ok in listOf("0.0.0.0", "10.0.0.1", "192.168.1.20", "255.255.255.255")) assertTrue(ok, Pairing.isIpv4(ok))
         for (bad in listOf("", "1.2.3", "1.2.3.4.5", "1.2.3.256", "1.2.3.-1", " 1.2.3.4", "1.2.3.4 ", "01.2.3.4",
                 "1..3.4", "a.b.c.d", "١.٢.٣.٤", "1.2.3.4/24", "localhost")) assertFalse(bad, Pairing.isIpv4(bad))
     }

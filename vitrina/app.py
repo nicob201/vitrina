@@ -34,7 +34,7 @@ def main(argv: list[str] | None = None, root: Path = ROOT, secrets_dir: Path = S
     if argv == ["stop"]:
         return control.stop(secrets_dir)
     if argv not in ([], ["pair"]):
-        log("Usage: python3 server.py [start | stop | pair]")
+        log("Usage: vitrina [start | stop | pair]")
         return 2
     try:
         cfg, created = load_config(root / "config.json", root / "config.example.json")
@@ -57,7 +57,7 @@ def main(argv: list[str] | None = None, root: Path = ROOT, secrets_dir: Path = S
         return 0
 
     # Nothing is served until a phone is paired: no key, no certificate, no open port.
-    not_paired = "Not paired yet. Plug in the phone and run: python3 server.py pair"
+    not_paired = "Not paired yet. Plug in the phone and run: vitrina pair"
     secret = read_secret(secrets_dir)
     cert, key = secrets_dir / "cert.pem", secrets_dir / "key.pem"
     if secret is None or not (cert.is_file() and key.is_file()):
@@ -66,7 +66,7 @@ def main(argv: list[str] | None = None, root: Path = ROOT, secrets_dir: Path = S
     try:
         tls = tls_context(cert, key)
     except OSError:  # ssl.SSLError included: a damaged certificate or key
-        log("Can't read the certificate. Plug in the phone and run: python3 server.py pair")
+        log("Can't read the certificate. Plug in the phone and run: vitrina pair")
         return 1
     if control.running_pid(secrets_dir) is not None:
         log("vitrina is already running.")
@@ -108,7 +108,7 @@ def main(argv: list[str] | None = None, root: Path = ROOT, secrets_dir: Path = S
     if ip:
         log(f"  WiFi:  https://{ip}:{cfg.port}")
     log(f"  Cable: https://localhost:{cfg.port}")
-    log("To stop it: python3 server.py stop")
+    log("To stop it: vitrina stop")
     lock = control.hold_lock(secrets_dir)  # after the lines above, so `start` can show all of them
     try:
         server.serve_forever()

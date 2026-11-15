@@ -11,7 +11,21 @@ android {
         minSdk = 26
         targetSdk = 37
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
+    }
+
+    // Release signing is opt-in: only with VITRINA_KEYSTORE set (the key lives outside the repo).
+    // Without it, `assembleRelease` makes an unsigned APK and nobody else needs a key.
+    val keystore = providers.environmentVariable("VITRINA_KEYSTORE").orNull
+    val keystorePassword = providers.environmentVariable("VITRINA_KEYSTORE_PASSWORD").orNull
+    if (keystore != null) {
+        signingConfigs.create("release") {
+            storeFile = file(keystore)
+            storePassword = keystorePassword
+            keyPassword = keystorePassword // PKCS12 uses one password for both
+            keyAlias = "vitrina"
+        }
+        buildTypes.getByName("release").signingConfig = signingConfigs.getByName("release")
     }
 
     compileOptions {

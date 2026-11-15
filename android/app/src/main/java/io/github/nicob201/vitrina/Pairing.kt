@@ -2,7 +2,7 @@ package io.github.nicob201.vitrina
 
 import java.security.MessageDigest
 
-/** What `python3 server.py pair` hands over: the key, the certificate's SHA-256 and where to find the Mac. */
+/** What `vitrina pair` hands over: the key, the certificate's SHA-256 and where to find the Mac. */
 data class PairingInfo(val key: String, val fingerprint: String, val port: Int, val wifiIp: String) {
     override fun toString() = "PairingInfo(fingerprint=$fingerprint, port=$port, wifiIp=$wifiIp)" // never the key
 }
