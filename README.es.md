@@ -20,31 +20,44 @@ computadora, y su pantalla se prende y se apaga junto con ella.
 - **adb**, para hablar con el celu por USB: `brew install android-platform-tools`.
 - Un **celular Android** (Android 8 o más nuevo) con la depuración USB activada, en el mismo WiFi que la
   Mac o enchufado por USB.
-- Para instalar la app, por ahora desde el código: **JDK 17** y el **SDK de Android** (el de Android
-  Studio o las herramientas de línea de comandos), con `JAVA_HOME` y `ANDROID_HOME` configurados. Los APK
-  listos van a llegar en Releases.
 
 ## Arranque rápido
 
 ```sh
 git clone https://github.com/nicob201/vitrina.git
 cd vitrina
-python3 server.py              # la primera vez crea config.json y avisa que falta emparejar
+mkdir -p ~/.local/bin && ln -s "$PWD/server.py" ~/.local/bin/vitrina   # el comando `vitrina`, en cualquier carpeta
 ```
 
-Completá `config.json` (ver abajo). Después, con el celu enchufado por USB:
+Si `~/.local/bin` todavía no está en tu PATH, agregalo y abrí una terminal nueva:
 
 ```sh
-(cd android && ./gradlew installDebug)   # instala la app de vitrina en el celu
-python3 server.py pair                   # el celu dice "Emparejado"
-python3 server.py start                  # arranca en segundo plano
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+```
+
+Después corré `vitrina` (en una terminal donde el comando todavía no se encuentra, `python3 server.py` hace
+lo mismo). La primera vez crea `config.json` y avisa que falta emparejar:
+
+```sh
+vitrina
+```
+
+Completá `config.json` (ver abajo). Bajá `vitrina-1.0.0.apk` del
+[último release](https://github.com/nicob201/vitrina/releases/latest), comprobalo con el SHA-256 de las notas
+del release y, con el celu enchufado por USB, instalalo y emparejá:
+
+```sh
+shasum -a 256 vitrina-1.0.0.apk          # tiene que coincidir con las notas del release
+adb install vitrina-1.0.0.apk            # instala la app de vitrina en el celu
+vitrina pair                             # el celu dice "Emparejado"
+vitrina start                            # arranca en segundo plano
 ```
 
 ```
 vitrina is running
   WiFi:  https://192.168.0.10:8765
   Cable: https://localhost:8765
-To stop it: python3 server.py stop
+To stop it: vitrina stop
 Log: /Users/vos/Library/Application Support/vitrina/server.log
 ```
 
@@ -55,14 +68,7 @@ permiso para sus notificaciones.
 
 ## Arrancar y frenar
 
-Para tener el comando `vitrina` en cualquier carpeta, una sola vez, parado en la carpeta del proyecto:
-
-```sh
-mkdir -p ~/.local/bin && ln -s "$PWD/server.py" ~/.local/bin/vitrina
-```
-
-`~/.local/bin` tiene que estar en tu PATH. Si no está, `python3 server.py` desde la carpeta del proyecto hace
-lo mismo.
+Sin el enlace de `vitrina` (ver Arranque rápido), `python3 server.py <comando>` desde la carpeta del proyecto hace lo mismo.
 
 | Comando | Qué hace |
 |---|---|
@@ -156,6 +162,16 @@ fotos muy grandes (de más de unos 4000 px, como las de 50 MP): se ven cortadas.
 python3 -m unittest                         # server
 (cd android && ./gradlew testDebugUnitTest) # lógica de la app
 ```
+
+Para compilar la app desde el código en vez de usar el release hacen falta **JDK 17** y el **SDK de Android**
+(el de Android Studio o las herramientas de línea de comandos), con `JAVA_HOME` y `ANDROID_HOME` configurados:
+
+```sh
+(cd android && ./gradlew installDebug)   # compila e instala una versión debug en el celu enchufado
+```
+
+Una versión debug y el APK del release están firmados con claves distintas, así que ninguna reemplaza a la
+otra: desinstalá antes la app del celu (`adb uninstall io.github.nicob201.vitrina`).
 
 El server no tiene dependencias ni build: Python a secas, y la página (`web/`) es HTML, CSS y JavaScript.
 La app (`android/`) es Kotlin con las APIs propias de Android: ninguna librería de terceros.

@@ -20,30 +20,44 @@ computer, and its screen turns on and off together with it.
 - **adb**, to talk to the phone over USB: `brew install android-platform-tools`.
 - An **Android phone** (Android 8 or newer) with USB debugging turned on, on the same Wi‑Fi as the Mac or
   plugged in by USB.
-- To install the app, for now from the source: **JDK 17** and the **Android SDK** (Android Studio's, or
-  the command-line tools), with `JAVA_HOME` and `ANDROID_HOME` set. Ready-made APKs will come in Releases.
 
 ## Quick start
 
 ```sh
 git clone https://github.com/nicob201/vitrina.git
 cd vitrina
-python3 server.py              # first run: creates config.json, then says it isn't paired yet
+mkdir -p ~/.local/bin && ln -s "$PWD/server.py" ~/.local/bin/vitrina   # the `vitrina` command, in any folder
 ```
 
-Fill in `config.json` (see below). Then, with the phone plugged in by USB:
+If `~/.local/bin` isn't in your PATH yet, add it and open a new terminal:
 
 ```sh
-(cd android && ./gradlew installDebug)   # installs the vitrina app on the phone
-python3 server.py pair                   # the phone says "Paired"
-python3 server.py start                  # runs in the background
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+```
+
+Then run `vitrina` (in a terminal where the command isn't found yet, `python3 server.py` does the same). The
+first run creates `config.json` and says it isn't paired yet:
+
+```sh
+vitrina
+```
+
+Fill in `config.json` (see below). Download `vitrina-1.0.0.apk` from the
+[latest release](https://github.com/nicob201/vitrina/releases/latest), check it against the SHA-256 in the
+release notes, and, with the phone plugged in by USB, install it and pair:
+
+```sh
+shasum -a 256 vitrina-1.0.0.apk          # must match the release notes
+adb install vitrina-1.0.0.apk            # installs the vitrina app on the phone
+vitrina pair                             # the phone says "Paired"
+vitrina start                            # runs in the background
 ```
 
 ```
 vitrina is running
   WiFi:  https://192.168.0.10:8765
   Cable: https://localhost:8765
-To stop it: python3 server.py stop
+To stop it: vitrina stop
 Log: /Users/you/Library/Application Support/vitrina/server.log
 ```
 
@@ -54,13 +68,7 @@ notifications.
 
 ## Starting and stopping
 
-To get the `vitrina` command in any folder, once, from the project folder:
-
-```sh
-mkdir -p ~/.local/bin && ln -s "$PWD/server.py" ~/.local/bin/vitrina
-```
-
-`~/.local/bin` must be in your PATH. If it isn't, `python3 server.py` from the project folder does the same.
+Without the `vitrina` link (see Quick start), `python3 server.py <command>` from the project folder does the same.
 
 | Command | What it does |
 |---|---|
@@ -154,6 +162,16 @@ screen; portrait ones are shown whole over a blurred copy. An older phone can't 
 python3 -m unittest                         # server
 (cd android && ./gradlew testDebugUnitTest) # app logic
 ```
+
+To build the app from source instead of using the release you need **JDK 17** and the **Android SDK**
+(Android Studio's, or the command-line tools), with `JAVA_HOME` and `ANDROID_HOME` set:
+
+```sh
+(cd android && ./gradlew installDebug)   # builds and installs a debug build on the plugged-in phone
+```
+
+A debug build and the release APK are signed with different keys, so neither can replace the other:
+uninstall the app from the phone first (`adb uninstall io.github.nicob201.vitrina`).
 
 The server has no dependencies and no build step: plain Python, and the page (`web/`) is plain HTML, CSS
 and JavaScript. The app (`android/`) is Kotlin on Android's own APIs only: no third-party libraries.
