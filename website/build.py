@@ -13,7 +13,7 @@ import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-DEFAULT_SITE_URL = "https://vitrina.pages.dev"
+DEFAULT_SITE_URL = "https://vitrina.nicolasboscasso.workers.dev"
 PHOTOS = ["bariloche.jpg", "estrellas.jpg", "lago-vertical.jpg"]
 SHIM_TAG = '<script src="demo-shim.js"></script>'
 APP_TAG = '<script src="app.js"></script>'
