@@ -164,5 +164,42 @@ class WebsiteBuildTest(unittest.TestCase):
         self.assertTrue((dist / "demo" / "state.es.json").is_file())
 
 
+    # ---- the finished site ----
+    def test_dist_complete(self):
+        _, out = self.build()
+        for rel in ("index.html", "styles.css", "site.js", "_headers", "favicon.svg", "og.png"):
+            self.assertTrue((out / rel).is_file(), rel)
+
+    def test_headers_csp(self):
+        _, out = self.build()
+        headers = (out / "_headers").read_text()
+        self.assertTrue(headers.startswith("/*\n"))
+        for line in (
+            "Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+            "font-src 'self'; connect-src 'self'; frame-src 'self'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'",
+            "X-Content-Type-Options: nosniff",
+            "Referrer-Policy: strict-origin-when-cross-origin",
+            "Permissions-Policy: camera=(), microphone=(), geolocation=()",
+        ):
+            self.assertIn(line, headers)
+
+    def test_no_inline_scripts_or_styles(self):
+        _, out = self.build()
+        for rel in ("index.html", "demo/index.html"):
+            html = (out / rel).read_text()
+            self.assertIsNone(re.search(r"<script(?![^>]*\bsrc=)", html), rel)
+            self.assertIsNone(re.search(r"<style|\sstyle=", html), rel)
+
+    def test_page_loads_nothing_from_third_parties(self):
+        _, out = self.build()
+        html = (out / "index.html").read_text()
+        loaders = re.findall(r"<(?:script|img|iframe)\b[^>]*\ssrc=\"([^\"]+)\"", html)
+        loaders += re.findall(r"<link\b[^>]*rel=\"(?:stylesheet|icon)\"[^>]*href=\"([^\"]+)\"", html)
+        loaders += re.findall(r"url\(([^)]+)\)", (out / "styles.css").read_text())
+        self.assertTrue(loaders)
+        for url in loaders:
+            self.assertNotRegex(url, r"^\W*https?:", url)
+
+
 if __name__ == "__main__":
     unittest.main()
