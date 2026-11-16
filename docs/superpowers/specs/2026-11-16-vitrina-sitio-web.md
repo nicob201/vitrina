@@ -154,13 +154,13 @@ Los enlaces a releases apuntan siempre a `…/releases/latest`; la versión solo
 
 ```
 /*
-  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src 'self'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src 'self'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
 ```
 
-Consecuencia: **ni el sitio ni la demo pueden tener scripts o estilos en línea**, ni atributos `style=""` escritos en el HTML. `web/` ya cumple (un solo `<script src>` y una hoja de estilos); el sitio nuevo también tiene que cumplirlo. Asignar propiedades con `element.style.setProperty` desde JS sí está permitido.
+Consecuencia: **ni el sitio ni la demo pueden tener scripts en línea**, y el HTML del sitio tampoco tiene `<style>` ni atributos `style=""`. `style-src` admite `'unsafe-inline'` porque `web/app.js` inyecta estilos en línea al pintar (los `style="grid-column:…"` de los meses de GitHub y el `<style>` del sprite `weather-icons.svg`) y la demo no puede modificar `web/`; es un riesgo bajo: un estilo en línea no ejecuta código, y `script-src` sigue en `'self'`.
 
 ## 8. Archivos nuevos
 

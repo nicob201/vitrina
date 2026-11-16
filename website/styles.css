@@ -114,7 +114,7 @@ footer nav { display: flex; gap: 22px; flex-wrap: wrap; align-self: flex-start; 
   .title { font-size: 40px; }
   .closing { padding: 64px 16px 48px; }
   .closing h2 { font-size: 42px; }
-  .grid, .install, .sec { grid-template-columns: 1fr; }
+  .grid, .install, .sec { grid-template-columns: minmax(0, 1fr); }
   .grid { gap: 40px; }
   .install, .sec { gap: 40px; }
   .note { padding-left: 0; }
