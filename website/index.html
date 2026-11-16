@@ -21,12 +21,12 @@
 
 <header class="nav">
   <a class="wordmark" href="#">vitrina</a>
-  <nav class="links">
+  <nav class="links" aria-label="Principal" data-i-attr="aria-label:nav.label">
     <a href="#como-se-ve" data-i="nav.demo">Cómo se ve</a>
     <a href="#instalacion" data-i="nav.install">Instalación</a>
     <a href="#seguridad" data-i="nav.security">Seguridad</a>
     <a class="gh" href="https://github.com/nicob201/vitrina" rel="noopener noreferrer">GitHub ↗</a>
-    <button id="lang" type="button" aria-label="Cambiar idioma / Change language"><span lang="es" aria-current="true">es</span> · <span lang="en">en</span></button>
+    <button id="lang" type="button" title="Cambiar idioma / Change language"><span lang="es" aria-current="true">es</span> · <span lang="en">en</span></button>
   </nav>
 </header>
 
@@ -41,7 +41,7 @@
     </div>
     <div class="stage" data-box>
       <div class="rig">
-        <div class="phone"><div class="screen" data-max="0.86" data-frame="950"><iframe data-src="demo/" title="Demo de vitrina, con datos de ejemplo" data-i-attr="title:hero.demoTitle"></iframe></div></div>
+        <div class="phone"><div class="screen" data-max="0.86" data-frame="950"><iframe data-src="demo/" tabindex="-1" title="Demo de vitrina, con datos de ejemplo" data-i-attr="title:hero.demoTitle"></iframe></div></div>
       </div>
       <p class="caption" data-i="hero.caption">La página real de vitrina, con datos de ejemplo. Tocala para pasar de panel.</p>
     </div>
@@ -81,13 +81,14 @@
       </dl>
     </div>
     <div>
-      <ol class="steps">
+      <ol class="steps" role="list">
         <li>
           <h3 data-i="step1.t">Bajá vitrina y creá el comando</h3>
-          <p data-i="step1.d">Así podés correr <code>vitrina</code> desde cualquier carpeta.</p>
-          <div class="term"><button class="copy-btn" type="button" data-i="copy">Copiar</button><pre>git clone https://github.com/nicob201/vitrina.git
+          <p data-i="step1.d">Así podés correr <code>vitrina</code> desde cualquier carpeta. El último comando agrega esa carpeta a tu PATH: abrí una terminal nueva después.</p>
+          <div class="term"><button class="copy-btn" type="button" aria-live="polite" data-i="copy">Copiar</button><pre>git clone https://github.com/nicob201/vitrina.git
 cd vitrina
-mkdir -p ~/.local/bin &amp;&amp; ln -s "$PWD/server.py" ~/.local/bin/vitrina</pre></div>
+mkdir -p ~/.local/bin &amp;&amp; ln -s "$PWD/server.py" ~/.local/bin/vitrina
+echo 'export PATH="$HOME/.local/bin:$PATH"' &gt;&gt; ~/.zshrc</pre></div>
         </li>
         <li>
           <h3 data-i="step2.t">Completá la configuración</h3>
@@ -95,14 +96,15 @@ mkdir -p ~/.local/bin &amp;&amp; ln -s "$PWD/server.py" ~/.local/bin/vitrina</pr
         </li>
         <li>
           <h3 data-i="step3.t">Instalá la app en el celu</h3>
-          <p data-i="step3.d">Bajá el APK del <a href="https://github.com/nicob201/vitrina/releases/latest" rel="noopener noreferrer">último release</a>, comprobá su huella SHA-256 con la de las notas y, con el celu enchufado por USB, instalalo.</p>
-          <div class="term"><button class="copy-btn" type="button" data-i="copy">Copiar</button><pre>shasum -a 256 vitrina-__VERSION__.apk   <span class="c" data-i="step3.c"># tiene que coincidir con las notas del release</span>
+          <p data-i="step3.d">Bajá el APK del <a href="https://github.com/nicob201/vitrina/releases/latest" rel="noopener noreferrer">último release</a> a tu carpeta Descargas, comprobá su huella SHA-256 con la de las notas y, con el celu enchufado por USB, instalalo.</p>
+          <div class="term"><button class="copy-btn" type="button" aria-live="polite" data-i="copy">Copiar</button><pre>cd ~/Downloads
+shasum -a 256 vitrina-__VERSION__.apk   <span class="c" data-i="step3.c"># tiene que coincidir con las notas del release</span>
 adb install vitrina-__VERSION__.apk</pre></div>
         </li>
         <li>
           <h3 data-i="step4.t">Emparejá y arrancá</h3>
           <p data-i="step4.d">El celu confirma el emparejado y vitrina se abre sola. La primera vez te guía por los ajustes del celu que hacen falta.</p>
-          <div class="term"><button class="copy-btn" type="button" data-i="copy">Copiar</button><pre>vitrina pair
+          <div class="term"><button class="copy-btn" type="button" aria-live="polite" data-i="copy">Copiar</button><pre>vitrina pair
 vitrina start</pre></div>
         </li>
       </ol>
@@ -118,8 +120,8 @@ vitrina start</pre></div>
     <div class="facts">
       <div><h3 data-i="sec1.t">Solo el celu emparejado ve algo</h3><p data-i="sec1.d">Todo viaja por HTTPS con un certificado hecho en tu Mac, y cada pedido lleva una clave secreta. Sin ella, el server no responde nada útil.</p></div>
       <div><h3 data-i="sec2.t">Emparejar solo se puede con adb</h3><p data-i="sec2.d">Solo adb puede abrir la pantalla de emparejar de la app, así que ninguna otra app del celu puede apuntar vitrina a otro server.</p></div>
-      <div><h3 data-i="sec3.t">No hay cuentas ni nube</h3><p data-i="sec3.d">Tus datos no pasan por ningún servidor de vitrina. Al clima se le manda solo el nombre de la ciudad, y el token de Claude nunca sale de tu Mac.</p></div>
-      <div><h3 data-i="sec4.t">No arranca sola ni toca tu Mac</h3><p data-i="sec4.d">Corre solo cuando vos la arrancás y nunca cambia nada en tu computadora. El código es abierto y el APK está firmado, con su huella en cada release.</p></div>
+      <div><h3 data-i="sec3.t">No hay cuentas ni nube</h3><p data-i="sec3.d">Tus datos no pasan por ningún servidor de vitrina. Al clima se le manda solo el nombre de la ciudad, y el token de Claude solo viaja a Anthropic, nunca al celu.</p></div>
+      <div><h3 data-i="sec4.t">No arranca sola ni toca tus archivos</h3><p data-i="sec4.d">Corre solo cuando vos la arrancás. No toca tus archivos ni la configuración de tu Mac: solo guarda lo suyo en su propia carpeta. El código es abierto y el APK está firmado, con su huella en cada release.</p></div>
     </div>
   </div></section>
 </main>
@@ -138,7 +140,7 @@ vitrina start</pre></div>
       <div class="wordmark">vitrina</div>
       <p data-i="footer.credits">Datos del clima de <a href="https://open-meteo.com/" rel="noopener noreferrer">Open-Meteo.com</a> (CC BY 4.0). Fuentes Big Shoulders Display y Atkinson Hyperlegible Next (SIL OFL 1.1). Fotos de la demo: dominio público (CC0) de <a href="https://commons.wikimedia.org/" rel="noopener noreferrer">Wikimedia Commons</a>; autores en <a href="https://github.com/nicob201/vitrina/blob/main/website/demo-photos/SOURCES.tsv" rel="noopener noreferrer">SOURCES.tsv</a>.</p>
     </div>
-    <nav>
+    <nav aria-label="Enlaces del proyecto" data-i-attr="aria-label:footer.label">
       <a href="https://github.com/nicob201/vitrina" rel="noopener noreferrer">GitHub</a>
       <a href="https://github.com/nicob201/vitrina/releases" rel="noopener noreferrer" data-i="footer.releases">Releases</a>
       <a href="https://github.com/nicob201/vitrina#readme" rel="noopener noreferrer" data-i="footer.readme">README</a>

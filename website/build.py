@@ -26,7 +26,7 @@ class BuildError(Exception):
 
 def read_version(repo: Path) -> str:
     gradle = repo / "android" / "app" / "build.gradle.kts"
-    match = re.search(r'versionName\s*=\s*"([^"]+)"', gradle.read_text())
+    match = re.search(r'versionName\s*=\s*"([^"]+)"', gradle.read_text(encoding="utf-8"))
     if not match:
         raise BuildError(f"no versionName in {gradle}")
     return match.group(1)
@@ -74,10 +74,10 @@ def build(repo: Path, out: Path, site_url: str = DEFAULT_SITE_URL) -> None:
     _import_vitrina(repo)
     site, demo = repo / "website", out / "demo"
     version = read_version(repo)
-    app_html = (repo / "web" / "index.html").read_text()
+    app_html = (repo / "web" / "index.html").read_text(encoding="utf-8")
     if app_html.count(APP_TAG) != 1:
         raise BuildError(f'web/index.html must have exactly one {APP_TAG}')
-    if "fetch('/api/state'" not in (repo / "web" / "app.js").read_text():
+    if "fetch('/api/state'" not in (repo / "web" / "app.js").read_text(encoding="utf-8"):
         raise BuildError("web/app.js no longer does fetch('/api/state'; update demo-shim.js")
 
     shutil.rmtree(out, ignore_errors=True)
@@ -88,15 +88,18 @@ def build(repo: Path, out: Path, site_url: str = DEFAULT_SITE_URL) -> None:
     (demo / "photos").mkdir()
     for name in PHOTOS:
         shutil.copy(site / "demo-photos" / name, demo / "photos" / name)
-    (demo / "index.html").write_text(app_html.replace(APP_TAG, SHIM_TAG + APP_TAG))
+    (demo / "index.html").write_text(app_html.replace(APP_TAG, SHIM_TAG + APP_TAG), encoding="utf-8")
 
     now = datetime.now(timezone.utc)
     for lang in ("es", "en"):
-        (demo / f"state.{lang}.json").write_text(json.dumps(demo_state(repo, lang, now)))
-    (demo / "demo-days.json").write_text(json.dumps(demo_pairs()))
+        (demo / f"state.{lang}.json").write_text(json.dumps(demo_state(repo, lang, now)), encoding="utf-8")
+    (demo / "demo-days.json").write_text(json.dumps(demo_pairs()), encoding="utf-8")
 
     index = out / "index.html"
-    index.write_text(index.read_text().replace("__VERSION__", version).replace("__SITE_URL__", site_url.rstrip("/")))
+    index.write_text(
+        index.read_text(encoding="utf-8").replace("__VERSION__", version).replace("__SITE_URL__", site_url.rstrip("/")),
+        encoding="utf-8",
+    )
     _fail_on_placeholders(out)
 
 
@@ -108,7 +111,7 @@ def _import_vitrina(repo: Path) -> None:
 def _fail_on_placeholders(out: Path) -> None:
     for path in out.rglob("*"):
         if path.is_file() and (path.suffix in TEXT_SUFFIXES or path.name == "_headers"):
-            left = re.search(r"__[A-Z][A-Z_]*__", path.read_text())
+            left = re.search(r"__[A-Z][A-Z_]*__", path.read_text(encoding="utf-8"))
             if left:
                 raise BuildError(f"{left.group(0)} was not replaced in {path.relative_to(out)}")
 

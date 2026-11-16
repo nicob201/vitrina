@@ -1,6 +1,6 @@
 # vitrina — el sitio web
 
-> Estado: **borrador para revisar** · 2026-11-16
+> Estado: **aprobado** · 2026-11-16 (ajustado tras la revisión final de la rama: ver cambios en §6.4, §7 y el Apéndice A)
 > Salió del brainstorming del 15 y 16 de noviembre. Las maquetas (`spike/sitio/`) quedaron fuera del repo (`spike/` está en `.gitignore`); lo que importa de ellas está acá.
 
 ## 1. Qué es y para quién
@@ -125,7 +125,7 @@ Tres fotos de dominio público (CC0) de Wikimedia Commons, ya descargadas en `sp
 - **Cómo se ve**: cuatro iframes **fijados** en un panel (`/demo/?lang=…&panel=clock|github|claude|photos`), con `loading="lazy"`, `inert`, `tabindex="-1"` y un `aria-label` en el contenedor (ver Apéndice A). No se pueden tocar.
 - **Cambio de idioma**: al tocar es/en, el sitio cambia sus textos y **recarga** los iframes con el nuevo `?lang=`. La demo vuelve al primer panel; es aceptable.
 - **Escalado**: `site.js` recorre los `.screen` con un `ResizeObserver` y fija `--s` (ver §5). Ancho sin escalar de la pantalla: 890 px; en la portada el marco suma 30 px de borde a cada lado (950 px); escala máxima 0.86 en la portada y 0.5 en la cuadrícula.
-- **Sin parpadeo del reloj**: una pantalla fijada muestra el reloj un instante hasta que carga el estado. Cada iframe arranca con `opacity: 0` y el shim avisa con `parent.postMessage({ vitrinaDemo: "ready" }, location.origin)` unos 400 ms después de entregar el primer estado. `site.js` valida `event.origin` y `event.source`, y muestra ese iframe con un fundido corto de 200 ms. Si el aviso no llega en 4 s, lo muestra igual.
+- **Sin parpadeo del reloj**: una pantalla fijada muestra el reloj un instante hasta que carga el estado. Cada iframe arranca con `opacity: 0` y el shim avisa con `parent.postMessage({ vitrinaDemo: "ready" }, location.origin)`: 400 ms después del primer estado si el panel es el reloj o la demo no está fijada, y si no, 1 s después de que `app.js` cambió al panel fijado (el fundido de `web/` dura 0,9 s). Si el primer pedido de estado falla, el shim lo reintenta en el siguiente sondeo. `site.js` valida `event.origin` y `event.source`, y muestra ese iframe con un fundido corto de 200 ms. Si el aviso no llega en 4 s, lo muestra igual.
 
 Techo conocido: cinco instancias de la página corren a la vez (cada una con su `setInterval` de 1 s). Los cuatro iframes de la cuadrícula son `lazy`, así que solo cargan al acercarse. Si un celu lento se traba, se pausan con `IntersectionObserver`; no hace falta para la v1.
 
@@ -277,11 +277,11 @@ Las claves de la tabla son las de `STRINGS` y los `data-i` del HTML. `{versión}
 | `needs.phone` | Un celu Android | An Android phone |
 | `needs.phone.d` | 8 o más nuevo, con depuración USB | 8 or newer, with USB debugging |
 | `step1.t` | Bajá vitrina y creá el comando | Get vitrina and create the command |
-| `step1.d` | Así podés correr `<code>vitrina</code>` desde cualquier carpeta. | That lets you run `<code>vitrina</code>` from any folder. |
+| `step1.d` | Así podés correr `<code>vitrina</code>` desde cualquier carpeta. El último comando agrega esa carpeta a tu PATH: abrí una terminal nueva después. | That lets you run `<code>vitrina</code>` from any folder. The last command adds that folder to your PATH: open a new terminal afterwards. |
 | `step2.t` | Completá la configuración | Fill in the config |
 | `step2.d` | Corré `<code>vitrina</code>` una vez: crea `<code>config.json</code>` y avisa que falta emparejar. Poné tu usuario de GitHub, tu ciudad y la carpeta de fotos. | Run `<code>vitrina</code>` once: it creates `<code>config.json</code>` and tells you pairing is still missing. Add your GitHub username, your city and your photos folder. |
 | `step3.t` | Instalá la app en el celu | Install the app on the phone |
-| `step3.d` | Bajá el APK del `<a>último release</a>`, comprobá su huella SHA-256 con la de las notas y, con el celu enchufado por USB, instalalo. | Download the APK from the `<a>latest release</a>`, check its SHA-256 against the release notes and, with the phone plugged in over USB, install it. |
+| `step3.d` | Bajá el APK del `<a>último release</a>` a tu carpeta Descargas, comprobá su huella SHA-256 con la de las notas y, con el celu enchufado por USB, instalalo. | Download the APK from the `<a>latest release</a>` into your Downloads folder, check its SHA-256 against the release notes and, with the phone plugged in over USB, install it. |
 | `step3.c` (comentario del comando) | # tiene que coincidir con las notas del release | # must match the release notes |
 | `step4.t` | Emparejá y arrancá | Pair and start |
 | `step4.d` | El celu confirma el emparejado y vitrina se abre sola. La primera vez te guía por los ajustes del celu que hacen falta. | The phone confirms the pairing and vitrina opens by itself. The first time, it walks you through the phone settings it needs. |
@@ -294,9 +294,9 @@ Las claves de la tabla son las de `STRINGS` y los `data-i` del HTML. `{versión}
 | `sec2.t` | Emparejar solo se puede con adb | Pairing only works through adb |
 | `sec2.d` | Solo adb puede abrir la pantalla de emparejar de la app, así que ninguna otra app del celu puede apuntar vitrina a otro server. | Only adb can open the app's pairing screen, so no other app on the phone can point vitrina at a different server. |
 | `sec3.t` | No hay cuentas ni nube | No accounts, no cloud |
-| `sec3.d` | Tus datos no pasan por ningún servidor de vitrina. Al clima se le manda solo el nombre de la ciudad, y el token de Claude nunca sale de tu Mac. | Your data never goes through a vitrina server. The weather service only gets your city's name, and the Claude token never leaves your Mac. |
-| `sec4.t` | No arranca sola ni toca tu Mac | It never starts itself or changes your Mac |
-| `sec4.d` | Corre solo cuando vos la arrancás y nunca cambia nada en tu computadora. El código es abierto y el APK está firmado, con su huella en cada release. | It runs only when you start it and never changes anything on your computer. The code is open and the APK is signed, with its fingerprint in every release. |
+| `sec3.d` | Tus datos no pasan por ningún servidor de vitrina. Al clima se le manda solo el nombre de la ciudad, y el token de Claude solo viaja a Anthropic, nunca al celu. | Your data never goes through a vitrina server. The weather service only gets your city's name, and the Claude token only goes to Anthropic, never to the phone. |
+| `sec4.t` | No arranca sola ni toca tus archivos | It never starts itself or touches your files |
+| `sec4.d` | Corre solo cuando vos la arrancás. No toca tus archivos ni la configuración de tu Mac: solo guarda lo suyo en su propia carpeta. El código es abierto y el APK está firmado, con su huella en cada release. | It runs only when you start it. It doesn't touch your files or your Mac's settings: it only keeps its own data in its own folder. The code is open and the APK is signed, with its fingerprint in every release. |
 | `closing.title` | Sacá ese celu del cajón | Get that phone out of the drawer |
 | `closing.small` | Gratis, open source, licencia MIT. | Free, open source, MIT license. |
 | `footer.credits` | Datos del clima de `<a>Open-Meteo.com</a>` (CC BY 4.0). Fuentes Big Shoulders Display y Atkinson Hyperlegible Next (SIL OFL 1.1). Fotos de la demo: dominio público (CC0) de `<a>Wikimedia Commons</a>`; autores en `<a>SOURCES.tsv</a>`. | Weather data from `<a>Open-Meteo.com</a>` (CC BY 4.0). Fonts Big Shoulders Display and Atkinson Hyperlegible Next (SIL OFL 1.1). Demo photos: public domain (CC0) from `<a>Wikimedia Commons</a>`; authors in `<a>SOURCES.tsv</a>`. |
@@ -311,8 +311,10 @@ Comandos (iguales en los dos idiomas; el `{versión}` se reemplaza):
 git clone https://github.com/nicob201/vitrina.git
 cd vitrina
 mkdir -p ~/.local/bin && ln -s "$PWD/server.py" ~/.local/bin/vitrina
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
 
 # paso 3
+cd ~/Downloads
 shasum -a 256 vitrina-{versión}.apk   # (comentario traducido: step3.c)
 adb install vitrina-{versión}.apk
 

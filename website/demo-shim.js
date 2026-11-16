@@ -6,6 +6,7 @@
   const lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'es';
   const t0 = Date.now(); // the reset times hang from page load, so the countdowns really count down
   const realFetch = window.fetch.bind(window);
+  const pinned = new URLSearchParams(location.search).get('panel');
   let loaded = null;
   let announced = false;
 
@@ -57,12 +58,37 @@
     return view;
   }
 
+  // Tell the site the demo can be shown: for a pinned panel, once app.js has switched to it and its 0.9 s fade is over.
+  function announceReady() {
+    if (announced || window.parent === window) return;
+    announced = true;
+    const tell = (delay) => setTimeout(() => window.parent.postMessage({ vitrinaDemo: 'ready' }, location.origin), delay);
+    if (!pinned || pinned === 'clock') return tell(400); // the clock is on from the start
+    const body = document.body;
+    const check = () => {
+      if (body.dataset.panel !== pinned) return;
+      observer.disconnect();
+      tell(1000);
+    };
+    const observer = new MutationObserver(check);
+    observer.observe(body, { attributes: true, attributeFilter: ['data-panel'] });
+    check();
+  }
+
   async function demoState() {
-    loaded = loaded || Promise.all([
-      realFetch(`state.${lang}.json`).then((r) => r.json()),
-      realFetch('demo-days.json').then((r) => r.json()),
-    ]);
-    const [base, pairs] = await loaded;
+    if (!loaded) {
+      loaded = Promise.all([
+        realFetch(`state.${lang}.json`).then((r) => r.json()),
+        realFetch('demo-days.json').then((r) => r.json()),
+      ]);
+    }
+    let base, pairs;
+    try {
+      [base, pairs] = await loaded;
+    } catch (e) {
+      loaded = null; // a failed first load must not stick: the next poll tries again
+      throw e;
+    }
     const now = Date.now();
     const d = new Date(now);
     const todayMs = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()); // the visitor's calendar day
@@ -73,10 +99,7 @@
         week: windowView(51, t0 + (3 * 24 + 5) * HOUR, now, true),
       },
     });
-    if (!announced && window.parent !== window) {
-      announced = true;
-      setTimeout(() => window.parent.postMessage({ vitrinaDemo: 'ready' }, location.origin), 400);
-    }
+    announceReady();
     return new Response(JSON.stringify(state), { headers: { 'Content-Type': 'application/json' } });
   }
 

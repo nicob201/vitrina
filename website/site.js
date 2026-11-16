@@ -7,7 +7,7 @@ const STRINGS = {
   es: {
     'meta.title': 'vitrina — tu celu viejo, ahora una pantalla de escritorio',
     'meta.description': 'Convertí un Android viejo en una mini pantalla de escritorio con la hora, el clima, tu actividad en GitHub, el uso de Claude y tus fotos. Gratis y open source.',
-    'nav.demo': 'Cómo se ve', 'nav.install': 'Instalación', 'nav.security': 'Seguridad',
+    'nav.demo': 'Cómo se ve', 'nav.install': 'Instalación', 'nav.security': 'Seguridad', 'nav.label': 'Principal', 'footer.label': 'Enlaces del proyecto',
     'hero.eyebrow': 'Gratis y open source · v{versión}',
     'hero.title': 'Tu celu viejo, ahora una pantalla de escritorio',
     'hero.lede': 'La hora y el clima, tu actividad en GitHub, el uso de Claude y tus fotos, rotando en un Android que tenías en un cajón. Tu Mac junta los datos; sin cuentas ni nube.',
@@ -24,11 +24,11 @@ const STRINGS = {
     'install.title': 'Instalala en cuatro pasos', 'install.sub': 'Primero, tres cosas que tenés que tener.',
     'needs.mac': 'Una Mac', 'needs.mac.d': 'con Python 3.9 o más nuevo', 'needs.adb': 'adb',
     'needs.phone': 'Un celu Android', 'needs.phone.d': '8 o más nuevo, con depuración USB',
-    'step1.t': 'Bajá vitrina y creá el comando', 'step1.d': 'Así podés correr <code>vitrina</code> desde cualquier carpeta.',
+    'step1.t': 'Bajá vitrina y creá el comando', 'step1.d': 'Así podés correr <code>vitrina</code> desde cualquier carpeta. El último comando agrega esa carpeta a tu PATH: abrí una terminal nueva después.',
     'step2.t': 'Completá la configuración',
     'step2.d': 'Corré <code>vitrina</code> una vez: crea <code>config.json</code> y avisa que falta emparejar. Poné tu usuario de GitHub, tu ciudad y la carpeta de fotos.',
     'step3.t': 'Instalá la app en el celu',
-    'step3.d': `Bajá el APK del ${link(REPO + '/releases/latest', 'último release')}, comprobá su huella SHA-256 con la de las notas y, con el celu enchufado por USB, instalalo.`,
+    'step3.d': `Bajá el APK del ${link(REPO + '/releases/latest', 'último release')} a tu carpeta Descargas, comprobá su huella SHA-256 con la de las notas y, con el celu enchufado por USB, instalalo.`,
     'step3.c': '# tiene que coincidir con las notas del release',
     'step4.t': 'Emparejá y arrancá',
     'step4.d': 'El celu confirma el emparejado y vitrina se abre sola. La primera vez te guía por los ajustes del celu que hacen falta.',
@@ -38,8 +38,8 @@ const STRINGS = {
     'security.sub': 'vitrina muestra tus datos en tu escritorio, así que está hecha para que nadie más pueda verlos.',
     'sec1.t': 'Solo el celu emparejado ve algo', 'sec1.d': 'Todo viaja por HTTPS con un certificado hecho en tu Mac, y cada pedido lleva una clave secreta. Sin ella, el server no responde nada útil.',
     'sec2.t': 'Emparejar solo se puede con adb', 'sec2.d': 'Solo adb puede abrir la pantalla de emparejar de la app, así que ninguna otra app del celu puede apuntar vitrina a otro server.',
-    'sec3.t': 'No hay cuentas ni nube', 'sec3.d': 'Tus datos no pasan por ningún servidor de vitrina. Al clima se le manda solo el nombre de la ciudad, y el token de Claude nunca sale de tu Mac.',
-    'sec4.t': 'No arranca sola ni toca tu Mac', 'sec4.d': 'Corre solo cuando vos la arrancás y nunca cambia nada en tu computadora. El código es abierto y el APK está firmado, con su huella en cada release.',
+    'sec3.t': 'No hay cuentas ni nube', 'sec3.d': 'Tus datos no pasan por ningún servidor de vitrina. Al clima se le manda solo el nombre de la ciudad, y el token de Claude solo viaja a Anthropic, nunca al celu.',
+    'sec4.t': 'No arranca sola ni toca tus archivos', 'sec4.d': 'Corre solo cuando vos la arrancás. No toca tus archivos ni la configuración de tu Mac: solo guarda lo suyo en su propia carpeta. El código es abierto y el APK está firmado, con su huella en cada release.',
     'closing.title': 'Sacá ese celu del cajón', 'closing.small': 'Gratis, open source, licencia MIT.',
     'footer.credits': `Datos del clima de ${link('https://open-meteo.com/', 'Open-Meteo.com')} (CC BY 4.0). Fuentes Big Shoulders Display y Atkinson Hyperlegible Next (SIL OFL 1.1). Fotos de la demo: dominio público (CC0) de ${link('https://commons.wikimedia.org/', 'Wikimedia Commons')}; autores en ${link(REPO + '/blob/main/website/demo-photos/SOURCES.tsv', 'SOURCES.tsv')}.`,
     'footer.releases': 'Releases', 'footer.readme': 'README', 'footer.license': 'Licencia MIT',
@@ -47,7 +47,7 @@ const STRINGS = {
   en: {
     'meta.title': 'vitrina — your old phone, now a desk display',
     'meta.description': 'Turn an old Android phone into a small desk display with the time, weather, your GitHub activity, your Claude usage and your photos. Free and open source.',
-    'nav.demo': 'How it looks', 'nav.install': 'Install', 'nav.security': 'Security',
+    'nav.demo': 'How it looks', 'nav.install': 'Install', 'nav.security': 'Security', 'nav.label': 'Main', 'footer.label': 'Project links',
     'hero.eyebrow': 'Free and open source · v{versión}',
     'hero.title': 'Your old phone, now a desk display',
     'hero.lede': 'The time and weather, your GitHub activity, your Claude usage and your photos, rotating on an Android that was sitting in a drawer. Your Mac gathers the data; no accounts, no cloud.',
@@ -64,11 +64,11 @@ const STRINGS = {
     'install.title': 'Install it in four steps', 'install.sub': 'First, three things you need.',
     'needs.mac': 'A Mac', 'needs.mac.d': 'with Python 3.9 or newer', 'needs.adb': 'adb',
     'needs.phone': 'An Android phone', 'needs.phone.d': '8 or newer, with USB debugging',
-    'step1.t': 'Get vitrina and create the command', 'step1.d': 'That lets you run <code>vitrina</code> from any folder.',
+    'step1.t': 'Get vitrina and create the command', 'step1.d': 'That lets you run <code>vitrina</code> from any folder. The last command adds that folder to your PATH: open a new terminal afterwards.',
     'step2.t': 'Fill in the config',
     'step2.d': 'Run <code>vitrina</code> once: it creates <code>config.json</code> and tells you pairing is still missing. Add your GitHub username, your city and your photos folder.',
     'step3.t': 'Install the app on the phone',
-    'step3.d': `Download the APK from the ${link(REPO + '/releases/latest', 'latest release')}, check its SHA-256 against the release notes and, with the phone plugged in over USB, install it.`,
+    'step3.d': `Download the APK from the ${link(REPO + '/releases/latest', 'latest release')} into your Downloads folder, check its SHA-256 against the release notes and, with the phone plugged in over USB, install it.`,
     'step3.c': '# must match the release notes',
     'step4.t': 'Pair and start',
     'step4.d': 'The phone confirms the pairing and vitrina opens by itself. The first time, it walks you through the phone settings it needs.',
@@ -78,8 +78,8 @@ const STRINGS = {
     'security.sub': 'vitrina shows your data on your desk, so it is built so nobody else can see it.',
     'sec1.t': 'Only the paired phone sees anything', 'sec1.d': 'Everything travels over HTTPS with a certificate made on your Mac, and every request carries a secret key. Without it, the server answers nothing useful.',
     'sec2.t': 'Pairing only works through adb', 'sec2.d': "Only adb can open the app's pairing screen, so no other app on the phone can point vitrina at a different server.",
-    'sec3.t': 'No accounts, no cloud', 'sec3.d': "Your data never goes through a vitrina server. The weather service only gets your city's name, and the Claude token never leaves your Mac.",
-    'sec4.t': 'It never starts itself or changes your Mac', 'sec4.d': 'It runs only when you start it and never changes anything on your computer. The code is open and the APK is signed, with its fingerprint in every release.',
+    'sec3.t': 'No accounts, no cloud', 'sec3.d': "Your data never goes through a vitrina server. The weather service only gets your city's name, and the Claude token only goes to Anthropic, never to the phone.",
+    'sec4.t': 'It never starts itself or touches your files', 'sec4.d': "It runs only when you start it. It doesn't touch your files or your Mac's settings: it only keeps its own data in its own folder. The code is open and the APK is signed, with its fingerprint in every release.',
     'closing.title': 'Get that phone out of the drawer', 'closing.small': 'Free, open source, MIT license.',
     'footer.credits': `Weather data from ${link('https://open-meteo.com/', 'Open-Meteo.com')} (CC BY 4.0). Fonts Big Shoulders Display and Atkinson Hyperlegible Next (SIL OFL 1.1). Demo photos: public domain (CC0) from ${link('https://commons.wikimedia.org/', 'Wikimedia Commons')}; authors in ${link(REPO + '/blob/main/website/demo-photos/SOURCES.tsv', 'SOURCES.tsv')}.`,
     'footer.releases': 'Releases', 'footer.readme': 'README', 'footer.license': 'MIT license',
@@ -135,6 +135,7 @@ function applyLang(lang) {
   for (const iframe of document.querySelectorAll('iframe[data-src]')) {
     const url = new URL(iframe.dataset.src, location.href);
     url.searchParams.set('lang', lang);
+    clearTimeout(fallbackTimers.get(iframe)); // a slow old load must not reveal the new one early
     iframe.classList.remove('ready');
     iframe.src = url.href;
   }

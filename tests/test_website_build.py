@@ -201,5 +201,50 @@ class WebsiteBuildTest(unittest.TestCase):
             self.assertNotRegex(url, r"^\W*https?:", url)
 
 
+    # ---- review fixes ----
+    def page(self):
+        _, out = self.build()
+        return (out / "index.html").read_text(), (out / "site.js").read_text()
+
+    def test_install_puts_local_bin_on_the_path(self):
+        html, _ = self.page()
+        self.assertIn("export PATH=\"$HOME/.local/bin:$PATH\"", html)
+
+    def test_apk_commands_run_where_the_apk_was_saved(self):
+        html, _ = self.page()
+        self.assertLess(html.index("cd ~/Downloads"), html.index("shasum -a 256"))
+
+    def test_demo_iframes_are_not_tab_stops(self):
+        html, _ = self.page()
+        tags = re.findall(r"<iframe\b[^>]*>", html)
+        self.assertEqual(len(tags), 5)
+        for tag in tags:
+            self.assertIn('tabindex="-1"', tag)
+
+    def test_accessibility_basics(self):
+        html, _ = self.page()
+        self.assertNotIn("aria-label", re.search(r'<button id="lang"[^>]*>', html).group(0))
+        for tag in re.findall(r"<nav\b[^>]*>", html):
+            self.assertIn("aria-label=", tag)
+        self.assertIn('<ol class="steps" role="list">', html)
+        for tag in re.findall(r'<button class="copy-btn"[^>]*>', html):
+            self.assertIn('aria-live="polite"', tag)
+
+    def test_security_copy_is_accurate(self):
+        _, js = self.page()
+        self.assertNotIn("nunca sale de tu Mac", js)
+        self.assertNotIn("never leaves your Mac", js)
+        self.assertNotIn("nunca cambia nada en tu computadora", js)
+        self.assertNotIn("never changes anything on your computer", js)
+        self.assertEqual(js.count("Anthropic"), 2)  # es + en say where the Claude token goes
+
+    def test_build_does_not_depend_on_the_locale(self):
+        repo = make_repo(self.tmp)
+        env = dict(os.environ, LC_ALL="C", LANG="C", PYTHONUTF8="0", PYTHONCOERCECLOCALE="0")
+        r = subprocess.run([sys.executable, str(repo / "website" / "build.py")], cwd=self.tmp,
+                           capture_output=True, text=True, env=env)
+        self.assertEqual(r.returncode, 0, r.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
