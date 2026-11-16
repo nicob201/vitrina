@@ -1,1 +1,151 @@
-<!doctype html><html lang="es" data-version="__VERSION__"><head><meta charset="utf-8"><title>vitrina</title><link rel="canonical" href="__SITE_URL__/"></head><body></body></html>
+<!doctype html>
+<html lang="es" data-version="__VERSION__">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1A2142">
+<title>vitrina — tu celu viejo, ahora una pantalla de escritorio</title>
+<meta name="description" content="Convertí un Android viejo en una mini pantalla de escritorio con la hora, el clima, tu actividad en GitHub, el uso de Claude y tus fotos. Gratis y open source.">
+<link rel="canonical" href="__SITE_URL__/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="__SITE_URL__/">
+<meta property="og:title" content="vitrina — tu celu viejo, ahora una pantalla de escritorio">
+<meta property="og:description" content="Convertí un Android viejo en una mini pantalla de escritorio con la hora, el clima, tu actividad en GitHub, el uso de Claude y tus fotos. Gratis y open source.">
+<meta property="og:image" content="__SITE_URL__/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+<script src="site.js" defer></script>
+</head>
+<body>
+
+<header class="nav">
+  <a class="wordmark" href="#">vitrina</a>
+  <nav class="links">
+    <a href="#como-se-ve" data-i="nav.demo">Cómo se ve</a>
+    <a href="#instalacion" data-i="nav.install">Instalación</a>
+    <a href="#seguridad" data-i="nav.security">Seguridad</a>
+    <a class="gh" href="https://github.com/nicob201/vitrina" rel="noopener noreferrer">GitHub ↗</a>
+    <button id="lang" type="button" aria-label="Cambiar idioma / Change language"><span lang="es" aria-current="true">es</span> · <span lang="en">en</span></button>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <p class="eyebrow" data-i="hero.eyebrow">Gratis y open source · v__VERSION__</p>
+    <h1 data-i="hero.title">Tu celu viejo, ahora una pantalla de escritorio</h1>
+    <p class="lede" data-i="hero.lede">La hora y el clima, tu actividad en GitHub, el uso de Claude y tus fotos, rotando en un Android que tenías en un cajón. Tu Mac junta los datos; sin cuentas ni nube.</p>
+    <div class="ctas">
+      <a class="btn primary" href="#instalacion" data-i="hero.cta1">Instalala</a>
+      <a class="btn ghost" href="https://github.com/nicob201/vitrina" rel="noopener noreferrer" data-i="hero.cta2">Ver en GitHub</a>
+    </div>
+    <div class="stage" data-box>
+      <div class="rig">
+        <div class="phone"><div class="screen" data-max="0.86" data-frame="950"><iframe data-src="demo/" title="Demo de vitrina, con datos de ejemplo" data-i-attr="title:hero.demoTitle"></iframe></div></div>
+      </div>
+      <p class="caption" data-i="hero.caption">La página real de vitrina, con datos de ejemplo. Tocala para pasar de panel.</p>
+    </div>
+  </section>
+
+  <section class="band" id="como-se-ve"><div class="wrap">
+    <h2 class="title" data-i="panels.title">Cuatro paneles, uno por vez</h2>
+    <p class="sub" data-i="panels.sub">Rotan solos, cada 15 segundos por defecto. Un panel sin nada para mostrar queda afuera.</p>
+    <div class="grid">
+      <figure class="item" data-box data-panel="clock">
+        <div class="screen" role="img" aria-label="La hora y el clima: vista en vivo con datos de ejemplo" data-max="0.5" data-frame="912"><iframe data-src="demo/?panel=clock" loading="lazy" inert tabindex="-1" title="La hora y el clima"></iframe></div>
+        <figcaption><h3 data-i="panels.clock.t">La hora y el clima</h3><p data-i="panels.clock.d">El reloj grande, la fecha y el tiempo de tu ciudad. Si se va la Mac, el reloj sigue.</p></figcaption>
+      </figure>
+      <figure class="item" data-box data-panel="github">
+        <div class="screen" role="img" aria-label="Tu actividad en GitHub: vista en vivo con datos de ejemplo" data-max="0.5" data-frame="912"><iframe data-src="demo/?panel=github" loading="lazy" inert tabindex="-1" title="Tu actividad en GitHub"></iframe></div>
+        <figcaption><h3 data-i="panels.github.t">Tu actividad en GitHub</h3><p data-i="panels.github.d">Los cuadraditos del último año, tu racha y lo de hoy.</p></figcaption>
+      </figure>
+      <figure class="item" data-box data-panel="claude">
+        <div class="screen" role="img" aria-label="El uso de Claude: vista en vivo con datos de ejemplo" data-max="0.5" data-frame="912"><iframe data-src="demo/?panel=claude" loading="lazy" inert tabindex="-1" title="El uso de Claude"></iframe></div>
+        <figcaption><h3 data-i="panels.claude.t">El uso de Claude</h3><p data-i="panels.claude.d">Sesión actual y límite semanal, con marca de ritmo. Opcional, viene apagado.</p></figcaption>
+      </figure>
+      <figure class="item" data-box data-panel="photos">
+        <div class="screen" role="img" aria-label="Tus fotos: vista en vivo con datos de ejemplo" data-max="0.5" data-frame="912"><iframe data-src="demo/?panel=photos" loading="lazy" inert tabindex="-1" title="Tus fotos"></iframe></div>
+        <figcaption><h3 data-i="panels.photos.t">Tus fotos</h3><p data-i="panels.photos.d">Las de una carpeta de tu Mac. Las verticales se ven enteras.</p></figcaption>
+      </figure>
+    </div>
+  </div></section>
+
+  <section class="band" id="instalacion"><div class="wrap install">
+    <div>
+      <h2 class="title" data-i="install.title">Instalala en cuatro pasos</h2>
+      <p class="sub" data-i="install.sub">Primero, tres cosas que tenés que tener.</p>
+      <dl class="needs">
+        <div><dt data-i="needs.mac">Una Mac</dt><dd data-i="needs.mac.d">con Python 3.9 o más nuevo</dd></div>
+        <div><dt data-i="needs.adb">adb</dt><dd><code>brew install android-platform-tools</code></dd></div>
+        <div><dt data-i="needs.phone">Un celu Android</dt><dd data-i="needs.phone.d">8 o más nuevo, con depuración USB</dd></div>
+      </dl>
+    </div>
+    <div>
+      <ol class="steps">
+        <li>
+          <h3 data-i="step1.t">Bajá vitrina y creá el comando</h3>
+          <p data-i="step1.d">Así podés correr <code>vitrina</code> desde cualquier carpeta.</p>
+          <div class="term"><button class="copy-btn" type="button" data-i="copy">Copiar</button><pre>git clone https://github.com/nicob201/vitrina.git
+cd vitrina
+mkdir -p ~/.local/bin &amp;&amp; ln -s "$PWD/server.py" ~/.local/bin/vitrina</pre></div>
+        </li>
+        <li>
+          <h3 data-i="step2.t">Completá la configuración</h3>
+          <p data-i="step2.d">Corré <code>vitrina</code> una vez: crea <code>config.json</code> y avisa que falta emparejar. Poné tu usuario de GitHub, tu ciudad y la carpeta de fotos.</p>
+        </li>
+        <li>
+          <h3 data-i="step3.t">Instalá la app en el celu</h3>
+          <p data-i="step3.d">Bajá el APK del <a href="https://github.com/nicob201/vitrina/releases/latest" rel="noopener noreferrer">último release</a>, comprobá su huella SHA-256 con la de las notas y, con el celu enchufado por USB, instalalo.</p>
+          <div class="term"><button class="copy-btn" type="button" data-i="copy">Copiar</button><pre>shasum -a 256 vitrina-__VERSION__.apk   <span class="c" data-i="step3.c"># tiene que coincidir con las notas del release</span>
+adb install vitrina-__VERSION__.apk</pre></div>
+        </li>
+        <li>
+          <h3 data-i="step4.t">Emparejá y arrancá</h3>
+          <p data-i="step4.d">El celu confirma el emparejado y vitrina se abre sola. La primera vez te guía por los ajustes del celu que hacen falta.</p>
+          <div class="term"><button class="copy-btn" type="button" data-i="copy">Copiar</button><pre>vitrina pair
+vitrina start</pre></div>
+        </li>
+      </ol>
+      <p class="note" data-i="install.note">Para frenarla: <code>vitrina stop</code>. Nada arranca solo, y si la Mac duerme más de una hora, vitrina se frena. El detalle completo está en el <a href="https://github.com/nicob201/vitrina#readme" rel="noopener noreferrer">README</a>.</p>
+    </div>
+  </div></section>
+
+  <section class="band security" id="seguridad"><div class="wrap sec">
+    <div>
+      <h2 class="title" data-i="security.title">Cerrada de entrada</h2>
+      <p class="sub" data-i="security.sub">vitrina muestra tus datos en tu escritorio, así que está hecha para que nadie más pueda verlos.</p>
+    </div>
+    <div class="facts">
+      <div><h3 data-i="sec1.t">Solo el celu emparejado ve algo</h3><p data-i="sec1.d">Todo viaja por HTTPS con un certificado hecho en tu Mac, y cada pedido lleva una clave secreta. Sin ella, el server no responde nada útil.</p></div>
+      <div><h3 data-i="sec2.t">Emparejar solo se puede con adb</h3><p data-i="sec2.d">Solo adb puede abrir la pantalla de emparejar de la app, así que ninguna otra app del celu puede apuntar vitrina a otro server.</p></div>
+      <div><h3 data-i="sec3.t">No hay cuentas ni nube</h3><p data-i="sec3.d">Tus datos no pasan por ningún servidor de vitrina. Al clima se le manda solo el nombre de la ciudad, y el token de Claude nunca sale de tu Mac.</p></div>
+      <div><h3 data-i="sec4.t">No arranca sola ni toca tu Mac</h3><p data-i="sec4.d">Corre solo cuando vos la arrancás y nunca cambia nada en tu computadora. El código es abierto y el APK está firmado, con su huella en cada release.</p></div>
+    </div>
+  </div></section>
+</main>
+
+<div class="end">
+  <section class="closing">
+    <h2 data-i="closing.title">Sacá ese celu del cajón</h2>
+    <div class="ctas">
+      <a class="btn primary" href="#instalacion" data-i="hero.cta1">Instalala</a>
+      <a class="btn ghost" href="https://github.com/nicob201/vitrina" rel="noopener noreferrer" data-i="hero.cta2">Ver en GitHub</a>
+    </div>
+    <p class="small" data-i="closing.small">Gratis, open source, licencia MIT.</p>
+  </section>
+  <footer>
+    <div>
+      <div class="wordmark">vitrina</div>
+      <p data-i="footer.credits">Datos del clima de <a href="https://open-meteo.com/" rel="noopener noreferrer">Open-Meteo.com</a> (CC BY 4.0). Fuentes Big Shoulders Display y Atkinson Hyperlegible Next (SIL OFL 1.1). Fotos de la demo: dominio público (CC0) de <a href="https://commons.wikimedia.org/" rel="noopener noreferrer">Wikimedia Commons</a>; autores en <a href="https://github.com/nicob201/vitrina/blob/main/website/demo-photos/SOURCES.tsv" rel="noopener noreferrer">SOURCES.tsv</a>.</p>
+    </div>
+    <nav>
+      <a href="https://github.com/nicob201/vitrina" rel="noopener noreferrer">GitHub</a>
+      <a href="https://github.com/nicob201/vitrina/releases" rel="noopener noreferrer" data-i="footer.releases">Releases</a>
+      <a href="https://github.com/nicob201/vitrina#readme" rel="noopener noreferrer" data-i="footer.readme">README</a>
+      <a href="https://github.com/nicob201/vitrina/blob/main/LICENSE" rel="noopener noreferrer" data-i="footer.license">Licencia MIT</a>
+    </nav>
+  </footer>
+</div>
+
+</body>
+</html>
