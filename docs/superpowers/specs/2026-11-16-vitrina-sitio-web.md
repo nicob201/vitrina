@@ -21,7 +21,7 @@ La estética es prioridad, igual que en el producto. Reusa el "escritorio de noc
 | Idiomas | **es/en con botón**, en una sola página. La demo también cambia de idioma. |
 | Estructura | **Una sola página**: portada con demo, "Cómo se ve", instalación, seguridad, cierre y pie. |
 | "Cómo se ve" | Opción 2: **cuadrícula 2×2** con los cuatro paneles fijados. |
-| Dominio | `vitrina.pages.dev`. Uno propio se puede sumar después sin tocar el sitio. |
+| Dominio | `vitrina.nicolasboscasso.workers.dev` (el que dejó Cloudflare al crear el proyecto; se pensó `vitrina.pages.dev`). Uno propio se puede sumar después sin tocar el sitio. |
 | Hosting | Cloudflare Pages con la **integración de GitHub** (se publica en cada push a `main`). Sin `wrangler`. |
 | Build | Un script de Python sin dependencias que corre Cloudflare. Sin `npm`. |
 | Estilo | Limpio, sin librerías ni frameworks, sin trackers ni analítica, sin recursos de terceros. |
