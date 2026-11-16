@@ -13,6 +13,8 @@ full screen, rotating through panels:
 Free and open source. No accounts, no cloud. The phone runs a small vitrina app that only talks to your
 computer, and its screen turns on and off together with it.
 
+**Website:** [vitrina.nicolasboscasso.workers.dev](https://vitrina.nicolasboscasso.workers.dev) — see it running and follow a short install guide.
+
 ## What you need
 
 - A **Mac** with **Python 3.9 or newer**: run `python3 --version` in Terminal; if it's missing, macOS
@@ -156,6 +158,22 @@ screen; portrait ones are shown whole over a blurred copy. An older phone can't 
 (over about 4000 px, like 50 MP shots): they appear cut off. Resize them first; on a Mac,
 `sips -Z 1600 photo.jpg` shrinks one in place so its longest side is 1600 px.
 
+## Make it yours
+
+vitrina is MIT licensed: you can copy it, change it and share it, so feel free to restyle it to your taste.
+What the phone shows is a plain web page (HTML, CSS and JavaScript) in `web/`, and the server reads it from
+disk on every request:
+
+- **Colors:** the variables at the top of `web/styles.css` (`:root`): background, text, GitHub's greens and
+  the Claude panel's palette.
+- **Fonts:** swap the files in `web/fonts/` and update the two `@font-face` rules and the `--display` and
+  `--text` variables in `web/styles.css`. The bundled fonts have their own license (SIL OFL, in
+  `web/fonts/`); if you use others, check theirs.
+- **See it:** reopen vitrina on the phone to load the change.
+
+This doesn't change the Android app's own screens (pairing, settings). To keep getting updates without
+conflicts, work in a fork or on a branch.
+
 ## Development
 
 ```sh
@@ -176,12 +194,17 @@ uninstall the app from the phone first (`adb uninstall io.github.nicob201.vitrin
 The server has no dependencies and no build step: plain Python, and the page (`web/`) is plain HTML, CSS
 and JavaScript. The app (`android/`) is Kotlin on Android's own APIs only: no third-party libraries.
 
+The website lives in `website/`: `python3 website/build.py` assembles it into `dist/`, with the live demo
+being the real `web/` page running on sample data.
+
 ## Credits
 
 - Weather data by [Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0).
 - Fonts: [Big Shoulders Display](https://fonts.google.com/specimen/Big+Shoulders+Display) and
   [Atkinson Hyperlegible Next](https://fonts.google.com/specimen/Atkinson+Hyperlegible+Next), SIL Open
   Font License 1.1 (in `web/fonts/`).
+- Website demo photos: public domain (CC0) from Wikimedia Commons; authors in
+  `website/demo-photos/SOURCES.tsv`.
 
 ## License
 

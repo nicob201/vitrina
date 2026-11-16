@@ -13,6 +13,8 @@ el celu los muestra a pantalla completa, rotando entre paneles:
 Gratis y open source. Sin cuentas, sin nube. El celu usa una pequeña app de vitrina que solo habla con tu
 computadora, y su pantalla se prende y se apaga junto con ella.
 
+**Sitio web:** [vitrina.nicolasboscasso.workers.dev](https://vitrina.nicolasboscasso.workers.dev) — mirala andando y seguí una guía corta de instalación.
+
 ## Qué necesitás
 
 - Una **Mac** con **Python 3.9 o más nuevo**: corré `python3 --version` en la Terminal; si no está,
@@ -156,6 +158,22 @@ toda la pantalla; las verticales se ven enteras sobre una copia desenfocada. Un 
 fotos muy grandes (de más de unos 4000 px, como las de 50 MP): se ven cortadas. Achicalas antes; en la Mac,
 `sips -Z 1600 foto.jpg` la achica en el lugar para que su lado más largo mida 1600 px.
 
+## Hacela tuya
+
+vitrina es MIT: podés copiarla, modificarla y repartirla, así que cambiale el estilo a tu gusto. Lo que
+muestra el celu es una página común (HTML, CSS y JavaScript) en `web/`, y el server la lee del disco en cada
+pedido:
+
+- **Colores:** las variables del principio de `web/styles.css` (`:root`): el fondo, los textos, los verdes de
+  GitHub y la paleta del panel de Claude.
+- **Fuentes:** cambiá los archivos de `web/fonts/` y las dos reglas `@font-face` y las variables `--display` y
+  `--text` de `web/styles.css`. Las fuentes que trae vitrina tienen su propia licencia (SIL OFL, en
+  `web/fonts/`); si usás otras, fijate la suya.
+- **Verlo:** reabrí vitrina en el celu para cargar el cambio.
+
+Esto no cambia las pantallas propias de la app Android (emparejar, ajustes). Para seguir recibiendo mejoras sin
+conflictos, trabajá en un fork o en una rama.
+
 ## Desarrollo
 
 ```sh
@@ -176,12 +194,17 @@ otra: desinstalá antes la app del celu (`adb uninstall io.github.nicob201.vitri
 El server no tiene dependencias ni build: Python a secas, y la página (`web/`) es HTML, CSS y JavaScript.
 La app (`android/`) es Kotlin con las APIs propias de Android: ninguna librería de terceros.
 
+El sitio web vive en `website/`: `python3 website/build.py` lo arma en `dist/`, y la demo en vivo es la página
+real de `web/` con datos de ejemplo.
+
 ## Créditos
 
 - Datos del clima de [Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0).
 - Fuentes: [Big Shoulders Display](https://fonts.google.com/specimen/Big+Shoulders+Display) y
   [Atkinson Hyperlegible Next](https://fonts.google.com/specimen/Atkinson+Hyperlegible+Next), SIL Open
   Font License 1.1 (en `web/fonts/`).
+- Fotos de la demo del sitio: dominio público (CC0) de Wikimedia Commons; autores en
+  `website/demo-photos/SOURCES.tsv`.
 
 ## Licencia
 
