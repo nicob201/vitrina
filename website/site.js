@@ -79,7 +79,7 @@ const STRINGS = {
     'sec1.t': 'Only the paired phone sees anything', 'sec1.d': 'Everything travels over HTTPS with a certificate made on your Mac, and every request carries a secret key. Without it, the server answers nothing useful.',
     'sec2.t': 'Pairing only works through adb', 'sec2.d': "Only adb can open the app's pairing screen, so no other app on the phone can point vitrina at a different server.",
     'sec3.t': 'No accounts, no cloud', 'sec3.d': "Your data never goes through a vitrina server. The weather service only gets your city's name, and the Claude token only goes to Anthropic, never to the phone.",
-    'sec4.t': 'It never starts itself or touches your files', 'sec4.d': "It runs only when you start it. It doesn't touch your files or your Mac's settings: it only keeps its own data in its own folder. The code is open and the APK is signed, with its fingerprint in every release.',
+    'sec4.t': 'It never starts itself or touches your files', 'sec4.d': "It runs only when you start it. It doesn't touch your files or your Mac's settings: it only keeps its own data in its own folder. The code is open and the APK is signed, with its fingerprint in every release.",
     'closing.title': 'Get that phone out of the drawer', 'closing.small': 'Free, open source, MIT license.',
     'footer.credits': `Weather data from ${link('https://open-meteo.com/', 'Open-Meteo.com')} (CC BY 4.0). Fonts Big Shoulders Display and Atkinson Hyperlegible Next (SIL OFL 1.1). Demo photos: public domain (CC0) from ${link('https://commons.wikimedia.org/', 'Wikimedia Commons')}; authors in ${link(REPO + '/blob/main/website/demo-photos/SOURCES.tsv', 'SOURCES.tsv')}.`,
     'footer.releases': 'Releases', 'footer.readme': 'README', 'footer.license': 'MIT license',

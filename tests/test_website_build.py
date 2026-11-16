@@ -246,5 +246,13 @@ class WebsiteBuildTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
 
 
+    @unittest.skipUnless(shutil.which("node"), "node is not installed")
+    def test_javascript_parses(self):
+        # A syntax error drops the whole file, and with site.js gone no demo iframe ever gets a src.
+        for name in ("site.js", "demo-shim.js"):
+            r = subprocess.run(["node", "--check", str(ROOT / "website" / name)], capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, f"{name}\n{r.stderr}")
+
+
 if __name__ == "__main__":
     unittest.main()
