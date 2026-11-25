@@ -1,6 +1,7 @@
+import json
 import unittest
 
-from vitrina.metrics import cpu_percent, memory_used, parse_battery, rate, read_all
+from vitrina.metrics import Metrics, cpu_percent, memory_used, parse_battery, rate, read_all
 
 REAL_PMSET = "Now drawing from 'AC Power'\n -InternalBattery-0 (id=23134307)\t80%; AC attached; not charging present: true\n"
 
@@ -76,6 +77,106 @@ class ReadAllTest(unittest.TestCase):
         ok[0] = False
         read_all({"b": flaky}, logs.append, failing)
         self.assertEqual(len(logs), 2)
+
+
+class MetricsTest(unittest.TestCase):
+    def setUp(self):
+        self.now = [0.0]
+        self.reads = 0
+
+    def advance(self, seconds):
+        self.now[0] += seconds
+
+    def read(self):
+        k = self.reads
+        self.reads += 1
+        return {"cpu": (100 + 30 * k, 50 + 10 * k, 850 + 50 * k, 10 * k), "ram": 12_000_000_000, "gpu": 6.0,
+                "net": (1000 + 5000 * k, 2000 + 500 * k)}
+
+    def metrics(self):
+        return Metrics(self.read, 24 * 2**30, clock=lambda: self.now[0])
+
+    def test_first_tick_is_a_baseline(self):
+        m = self.metrics()
+        m.tick()
+        s = m.body()["samples"]
+        self.assertEqual(len(s), 1)
+        self.assertEqual((s[0]["cpu"], s[0]["down"], s[0]["up"]), (None, None, None))
+        self.assertEqual((s[0]["ram"], s[0]["gpu"]), (12_000_000_000, 6.0))
+        self.assertTrue(m.ready)
+
+    def test_second_tick_has_rates(self):
+        m = self.metrics()
+        m.tick()
+        self.advance(5)
+        m.tick()
+        last = m.body()["samples"][-1]
+        self.assertEqual((last["cpu"], last["down"], last["up"]), (50.0, 1000, 100))
+
+    def test_keeps_the_last_300_seconds(self):
+        m = self.metrics()
+        for _ in range(70):
+            m.tick()
+            self.advance(5)
+            m.seen()
+        s = m.body()["samples"]
+        self.assertEqual(len(s), 60)
+        self.assertEqual(s[-1]["t"] - s[0]["t"], 295)
+
+    def test_gap_over_15s_resets_history(self):
+        m = self.metrics()
+        m.tick()
+        self.advance(5)
+        m.tick()
+        self.advance(16)
+        m.tick()
+        s = m.body()["samples"]
+        self.assertEqual(len(s), 1)
+        self.assertIsNone(s[0]["cpu"])
+
+    def test_clock_going_back_resets_history(self):
+        m = self.metrics()
+        m.tick()
+        self.advance(5)
+        m.tick()
+        self.advance(-30)
+        m.tick()
+        self.assertEqual(len(m.body()["samples"]), 1)
+
+    def test_pauses_without_requests_and_resumes(self):
+        m = self.metrics()
+        self.advance(61)
+        m.tick()
+        self.assertEqual(self.reads, 0)
+        m.seen()
+        m.tick()
+        self.assertEqual(self.reads, 1)
+
+    def test_start_counts_as_a_request(self):
+        m = self.metrics()
+        self.advance(60)
+        m.tick()
+        self.assertEqual(self.reads, 1)
+
+    def test_not_ready_without_any_data(self):
+        m = Metrics(lambda: {"cpu": None, "ram": None, "gpu": None, "net": None}, 1, clock=lambda: 0.0)
+        m.tick()
+        self.assertFalse(m.ready)
+
+    def test_body_shape(self):
+        m = self.metrics()
+        m.tick()
+        m.set_slow({"free": 3, "total": 5}, {"pct": 80, "state": "ac"})
+        b = m.body()
+        self.assertEqual(set(b), {"interval", "samples", "ram_total", "disk", "battery"})
+        self.assertEqual((b["interval"], b["disk"], b["battery"]["state"]), (5, {"free": 3, "total": 5}, "ac"))
+        json.dumps(b)
+
+    def test_body_is_a_copy(self):
+        m = self.metrics()
+        m.tick()
+        m.body()["samples"].clear()
+        self.assertEqual(len(m.body()["samples"]), 1)
 
 
 if __name__ == "__main__":
