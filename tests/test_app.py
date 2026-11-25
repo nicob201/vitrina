@@ -1,9 +1,11 @@
 import errno
+import http.client
 import io
 import json
 import os
 import shutil
 import socket
+import ssl
 import subprocess
 import sys
 import tempfile
@@ -160,7 +162,7 @@ class PortTest(unittest.TestCase):
         self.assertIn("already running", out)
         self.assert_port_free(port)
 
-    def serve_until_long_sleep(self, config, cable=lambda port: False, release=None, adb_running=False):
+    def serve_until_long_sleep(self, config, cable=lambda port: False, release=None, adb_running=False, during=None):
         """Run the real server until it holds the lock, then report a long sleep; returns what it did."""
         (self.root / "config.json").write_text(json.dumps(config))
         self.pair_for_tests()
@@ -182,6 +184,8 @@ class PortTest(unittest.TestCase):
                     break
                 threading.Event().wait(0.01)
             self.assertEqual(running_pid(self.secrets), os.getpid(), "server never took the lock")
+            if during:
+                during()
             woke["cb"]()
             thread.join(3)
         self.assertFalse(thread.is_alive(), "server kept running after the long sleep")
@@ -212,6 +216,27 @@ class PortTest(unittest.TestCase):
         self.assertEqual(code, 0)
         metrics.assert_called_once()
         self.assertNotIn("Mac panel:", out)  # no reader failed
+
+    @unittest.skipUnless(sys.platform == "darwin", "macOS only")
+    def test_each_keyed_request_keeps_the_mac_panel_reading(self):
+        metrics = mock.Mock(ready=False)
+        metrics.body.return_value = {"interval": 5, "samples": []}
+        port = self.free_port()
+
+        def ask():
+            ctx = ssl.create_default_context(cafile=str(self.secrets / "cert.pem"))
+            ctx.check_hostname = False
+            for path, key, status in (("/api/state", "k" * 43, 200), ("/api/metrics", "k" * 43, 200),
+                                      ("/api/metrics", "wrong", 401)):
+                conn = http.client.HTTPSConnection("127.0.0.1", port, timeout=5, context=ctx)
+                conn.request("GET", path, headers={"Authorization": f"Bearer {key}"})
+                self.assertEqual(conn.getresponse().status, status, path)
+                conn.close()
+
+        with mock.patch("vitrina.app.Metrics", return_value=metrics):
+            code, *_ = self.serve_until_long_sleep({"port": port, "wifi": False, "mac": True}, during=ask)
+        self.assertEqual(code, 0)
+        self.assertEqual(metrics.seen.call_count, 2)  # the request without the key doesn't count
 
     def test_someone_elses_adb_is_left_running(self):
         # Android Studio or a debugging session opened adb's daemon before vitrina: only undo the reverse.
