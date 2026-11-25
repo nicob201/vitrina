@@ -8,7 +8,8 @@ import ctypes
 import os
 import shutil
 import subprocess
-from ctypes import POINTER, Structure, byref, c_char_p, c_int, c_int64, c_uint, c_uint8, c_uint32, c_uint64, c_void_p
+from ctypes import (POINTER, Structure, byref, c_char_p, c_int, c_int64, c_uint, c_uint8, c_uint32, c_uint64, c_ulong,
+                    c_void_p)
 from functools import lru_cache
 
 from .metrics import memory_used, parse_battery
@@ -82,10 +83,15 @@ def _iokit():
     cf.CFNumberGetValue.restype = ctypes.c_bool
     cf.CFNumberGetValue.argtypes = [c_void_p, c_int, c_void_p]
     cf.CFRelease.argtypes = [c_void_p]
+    cf.CFGetTypeID.restype = c_ulong
+    cf.CFGetTypeID.argtypes = [c_void_p]
+    cf.CFDictionaryGetTypeID.restype = c_ulong
+    cf.CFNumberGetTypeID.restype = c_ulong
     # Kept for the life of the process: two keys, created once.
     keys = (cf.CFStringCreateWithCString(None, b"PerformanceStatistics", _CF_UTF8),
             cf.CFStringCreateWithCString(None, b"Device Utilization %", _CF_UTF8))
-    return iokit, cf, keys
+    types = (cf.CFDictionaryGetTypeID(), cf.CFNumberGetTypeID())
+    return iokit, cf, keys, types
 
 
 def read_cpu_ticks() -> tuple[int, int, int, int]:
@@ -108,7 +114,7 @@ def read_memory_used() -> int:
 
 def read_gpu() -> float | None:
     """The busiest GPU's utilization, as Activity Monitor shows it; None if no GPU reports one."""
-    iokit, cf, (perf_key, util_key) = _iokit()
+    iokit, cf, (perf_key, util_key), (dictionary, number_type) = _iokit()
     found = c_uint()
     # IOServiceGetMatchingServices takes over (and releases) the matching dictionary.
     kr = iokit.IOServiceGetMatchingServices(0, iokit.IOServiceMatching(b"IOAccelerator"), byref(found))
@@ -125,9 +131,14 @@ def read_gpu() -> float | None:
                 if not stats:
                     continue
                 try:
+                    # Check each type first: a CF call on the wrong type crashes the whole process.
+                    if cf.CFGetTypeID(stats) != dictionary:
+                        continue
                     value = cf.CFDictionaryGetValue(stats, util_key)
+                    if not value or cf.CFGetTypeID(value) != number_type:
+                        continue
                     number = c_int64()
-                    if value and cf.CFNumberGetValue(value, _CF_SINT64, byref(number)):
+                    if cf.CFNumberGetValue(value, _CF_SINT64, byref(number)):
                         best = float(number.value) if best is None else max(best, float(number.value))
                 finally:
                     cf.CFRelease(stats)

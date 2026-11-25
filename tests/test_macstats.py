@@ -42,6 +42,33 @@ class CommandsTest(unittest.TestCase):
         cdll.assert_not_called()
 
 
+class GpuTypeTest(unittest.TestCase):
+    """A driver that ever answered with another type must not crash vitrina: a wrong CF call can't be caught."""
+    DICT, NUMBER = 18, 22
+
+    def read_with(self, types):
+        iokit, cf = mock.Mock(), mock.Mock()
+        iokit.IOServiceGetMatchingServices.return_value = 0
+        iokit.IOIteratorNext.side_effect = [7, 0]
+        iokit.IORegistryEntryCreateCFProperty.return_value = 100  # the statistics, if a dictionary
+        cf.CFDictionaryGetValue.return_value = 200  # the utilization, if a number
+        cf.CFGetTypeID.side_effect = lambda ref: types[ref]
+        with mock.patch("vitrina.macstats._iokit", return_value=(iokit, cf, ("perf", "util"), (self.DICT, self.NUMBER))):
+            return read_gpu(), iokit, cf
+
+    def test_statistics_that_are_not_a_dictionary_are_skipped(self):
+        gpu, iokit, cf = self.read_with({100: 99})
+        self.assertIsNone(gpu)
+        cf.CFDictionaryGetValue.assert_not_called()
+        cf.CFRelease.assert_called_once_with(100)
+        iokit.IOObjectRelease.assert_any_call(7)
+
+    def test_a_utilization_that_is_not_a_number_is_skipped(self):
+        gpu, _, cf = self.read_with({100: self.DICT, 200: 99})
+        self.assertIsNone(gpu)
+        cf.CFNumberGetValue.assert_not_called()
+
+
 @unittest.skipUnless(sys.platform == "darwin", "macOS only")
 class RealReadersTest(unittest.TestCase):
     def test_values_in_range(self):
