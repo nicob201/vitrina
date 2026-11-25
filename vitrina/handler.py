@@ -39,6 +39,7 @@ def make_server(
     photo_path: Callable[[int], Path | None],
     tls: ssl.SSLContext,
     secret: str,
+    get_metrics: Callable[[], dict | None] = lambda: None,
 ) -> ThreadingHTTPServer:
     """HTTPS only, and only for whoever presents the paired key. There is no unencrypted mode."""
     if not secret:
@@ -87,6 +88,14 @@ def make_server(
                 link = "usb" if self.client_address[0] in _LOCAL else "wifi"
                 state = get_state(self.headers.get("Accept-Language"), link)
                 body = json.dumps(state, ensure_ascii=False).encode("utf-8")
+                self._send(200, "application/json; charset=utf-8", body, {"Cache-Control": "no-store"})
+                return
+            if path == "/api/metrics":
+                metrics = get_metrics()  # None: the Mac panel is off
+                if metrics is None:
+                    self._send(404, "text/plain; charset=utf-8", b"not found")
+                    return
+                body = json.dumps(metrics).encode("utf-8")
                 self._send(200, "application/json; charset=utf-8", body, {"Cache-Control": "no-store"})
                 return
             photo = re.fullmatch(r"/api/photo/(\d+)", path)

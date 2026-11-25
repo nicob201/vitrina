@@ -5,6 +5,7 @@
   "seconds_per_panel": 15,
   "github_user": "",
   "claude": false,
+  "mac": false,
   "city": "",
   "country": "",
   "units": "celsius",

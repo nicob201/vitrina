@@ -44,6 +44,11 @@ class LoadConfigTest(unittest.TestCase):
             (9000, "octocat", True, "celsius"),
         )
 
+    def test_mac_must_be_boolean(self):
+        self.write('{"mac": "yes"}')
+        with self.assertRaisesRegex(ConfigError, '"mac" must be true or false'):
+            load_config(self.path, EXAMPLE)
+
     def test_invalid_json_reports_line(self):
         self.write('{\n "port": 80,\n}')
         with self.assertRaisesRegex(ConfigError, "line 3"):

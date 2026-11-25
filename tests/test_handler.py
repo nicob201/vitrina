@@ -40,8 +40,10 @@ class HandlerTest(unittest.TestCase):
 
         self.cert, self.key = make_cert(root / "certs")
         self.tls = tls_context(self.cert, self.key)
+        self.metrics = {"interval": 5, "samples": []}
         self.server = make_server("127.0.0.1", 0, self.web, get_state,
-                                  lambda i: self.photo if i == 0 else None, tls=self.tls, secret=KEY)
+                                  lambda i: self.photo if i == 0 else None, tls=self.tls, secret=KEY,
+                                  get_metrics=lambda: self.metrics)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
 
     def tearDown(self):
@@ -85,6 +87,20 @@ class HandlerTest(unittest.TestCase):
     def test_state_without_accept_language(self):
         self.get("/api/state")
         self.assertEqual(self.state_calls, [(None, "usb")])
+
+    def test_metrics(self):
+        resp, body = self.get("/api/metrics")
+        self.assertEqual((resp.status, resp.getheader("Cache-Control")), (200, "no-store"))
+        self.assertTrue(resp.getheader("Content-Type").startswith("application/json"))
+        self.assertEqual(json.loads(body), {"interval": 5, "samples": []})
+
+    def test_metrics_turned_off_is_404(self):
+        self.metrics = None
+        self.assertEqual(self.get("/api/metrics")[0].status, 404)
+
+    def test_metrics_needs_the_key_and_a_local_host(self):
+        self.assertEqual(self.get("/api/metrics", key=None)[0].status, 401)
+        self.assertEqual(self.get("/api/metrics", {"Host": "evil.example"})[0].status, 403)
 
     def test_photo(self):
         resp, body = self.get("/api/photo/0")
