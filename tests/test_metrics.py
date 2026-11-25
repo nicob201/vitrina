@@ -162,6 +162,13 @@ class MetricsTest(unittest.TestCase):
         m.tick()
         self.assertEqual(self.reads, 1)
 
+    def test_pause_clears_the_history(self):  # no hours-old samples when the phone comes back
+        m = self.metrics()
+        m.tick()
+        self.advance(61)
+        m.tick()
+        self.assertEqual(m.body()["samples"], [])
+
     def test_start_counts_as_a_request(self):
         m = self.metrics()
         self.advance(60)

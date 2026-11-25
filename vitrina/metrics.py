@@ -92,7 +92,10 @@ class Metrics:
     def tick(self) -> None:
         with self._lock:
             if self._clock() - self._seen > IDLE:
-                return  # nobody is looking; the gap will start the history over
+                # Nobody is looking: stop reading, and drop what would be stale when the phone comes back.
+                self._samples.clear()
+                self._prev = None
+                return
         raw = self._read()  # outside the lock: requests never wait on a reading
         now = self._clock()
         with self._lock:
