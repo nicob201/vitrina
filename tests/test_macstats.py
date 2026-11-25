@@ -16,7 +16,7 @@ class CommandsTest(unittest.TestCase):
     def test_battery_uses_pmset(self):
         run = mock.Mock(return_value=subprocess.CompletedProcess([], 0, stdout=REAL_PMSET))
         self.assertEqual(read_battery(run), {"pct": 80, "state": "ac"})
-        self.assertEqual(run.call_args.args[0], ["pmset", "-g", "batt"])
+        self.assertEqual(run.call_args.args[0], ["/usr/bin/pmset", "-g", "batt"])
         self.assertEqual(run.call_args.kwargs["timeout"], 10)
 
     def test_battery_failure_is_none(self):
@@ -25,7 +25,7 @@ class CommandsTest(unittest.TestCase):
     def test_computer_name(self):
         run = mock.Mock(return_value=subprocess.CompletedProcess([], 0, stdout="MacBook Air de Nico\n"))
         self.assertEqual(computer_name(run), "MacBook Air de Nico")
-        self.assertEqual(run.call_args.args[0], ["scutil", "--get", "ComputerName"])
+        self.assertEqual(run.call_args.args[0], ["/usr/sbin/scutil", "--get", "ComputerName"])
         self.assertEqual(run.call_args.kwargs["timeout"], 10)
 
     def test_computer_name_falls_back_to_mac(self):

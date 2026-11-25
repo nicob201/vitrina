@@ -1,5 +1,6 @@
 """What the Mac panel reads from macOS: straight from the system (Mach, IOKit, getifaddrs), so the reading
-every few seconds starts no program. Only pmset (every half hour) and scutil (once) are run as commands.
+every few seconds starts no program. Only pmset (every half hour) and scutil (once) are run, by their full
+path so nothing else on PATH can stand in for them.
 Nothing is loaded on import: the system libraries open on first use, so importing this anywhere is harmless."""
 from __future__ import annotations
 
@@ -169,14 +170,14 @@ def read_disk() -> dict:
 
 
 def read_battery(run=subprocess.run) -> dict | None:
-    out = run(["pmset", "-g", "batt"], capture_output=True, text=True, timeout=10)
+    out = run(["/usr/bin/pmset", "-g", "batt"], capture_output=True, text=True, timeout=10)
     return parse_battery(out.stdout) if out.returncode == 0 else None
 
 
 def computer_name(run=subprocess.run) -> str:
     """The name in System Settings > General > Sharing; "Mac" if it can't be read."""
     try:
-        out = run(["scutil", "--get", "ComputerName"], capture_output=True, text=True, timeout=10)
+        out = run(["/usr/sbin/scutil", "--get", "ComputerName"], capture_output=True, text=True, timeout=10)
     except (OSError, subprocess.SubprocessError):
         return "Mac"
     name = out.stdout.strip() if out.returncode == 0 else ""
