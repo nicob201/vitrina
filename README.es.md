@@ -8,6 +8,7 @@ el celu los muestra a pantalla completa, rotando entre paneles:
 - **Hora** con la fecha y el clima
 - **Actividad en GitHub**: los cuadraditos de contribuciones, tu racha y lo de hoy
 - **Uso de Claude**: sesión actual y límite semanal, con marca de ritmo (opcional)
+- **Mac**: CPU, GPU, memoria y red de los últimos 5 minutos, más disco y batería (opcional)
 - **Fotos** de una carpeta de tu computadora
 
 Gratis y open source. Sin cuentas, sin nube. El celu usa una pequeña app de vitrina que solo habla con tu
@@ -95,6 +96,7 @@ estaba y el celu se prende solo. Nada arranca solo: vitrina corre solo cuando vo
 | `seconds_per_panel` | `15` | Cuánto queda cada panel en pantalla (5 o más) |
 | `github_user` | `""` | Tu usuario de GitHub. Vacío = sin panel de GitHub |
 | `claude` | `false` | `true` activa el panel de uso de Claude (ver abajo) |
+| `mac` | `false` | `true` activa el panel de la Mac (ver abajo) |
 | `city` | `""` | Ciudad para el clima. Vacío = sin clima |
 | `country` | `""` | Código de país de dos letras, opcional, para elegir bien la ciudad. Ej.: `"AR"` |
 | `units` | `"celsius"` | `"celsius"` o `"fahrenheit"` |
@@ -131,6 +133,19 @@ computadora y le pregunta a Anthropic tu uso cada 5 minutos:
   Claude Code). Al celu solo van porcentajes y horarios de reinicio.
 - Usa el mismo endpoint **no documentado** que el `/usage` de Claude Code. Puede dejar de andar en
   cualquier momento; si pasa, el panel simplemente desaparece.
+
+## El panel de la Mac
+
+Apagado de entrada. Con `"mac": true`, el server lee qué tan ocupada está la Mac: CPU, GPU, memoria y red
+cada 5 segundos, y espacio en disco y batería cada media hora.
+
+- Le pregunta directo a macOS, sin `sudo` ni programas extra: cada lectura tarda mucho menos de un
+  milisegundo.
+- Corre solo mientras vitrina corre (`vitrina stop` la corta) y se pausa si el celu no consultó nada en un
+  minuto.
+- La Mac guarda los últimos 5 minutos; el celu los pide solo con el panel en pantalla y hace todo el
+  dibujo. Al celu llegan porcentajes, velocidades, espacio en disco, batería y el nombre de la Mac: ningún
+  nombre de proceso ni de archivo.
 
 ## Seguridad
 
