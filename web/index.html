@@ -56,6 +56,48 @@
   </div>
 </section>
 
+<section class="panel mac" id="mac">
+  <h2><span id="mac-name"></span> <span class="window" id="mac-window"></span></h2>
+  <div class="mac-grid">
+    <div class="mac-big">
+      <div class="mac-card mac-cpu" id="mac-cpu">
+        <div class="row"><i class="dot"></i><span id="mac-cpu-label"></span></div>
+        <div class="num"><span id="mac-cpu-value"></span><small>%</small></div>
+        <svg class="spark" id="mac-cpu-spark" aria-hidden="true"></svg>
+      </div>
+      <div class="mac-card mac-gpu" id="mac-gpu">
+        <div class="row"><i class="dot"></i><span id="mac-gpu-label"></span></div>
+        <div class="num"><span id="mac-gpu-value"></span><small>%</small></div>
+        <svg class="spark" id="mac-gpu-spark" aria-hidden="true"></svg>
+      </div>
+      <div class="mac-card mac-ram" id="mac-ram">
+        <div class="row"><i class="dot"></i><span id="mac-ram-label"></span><span class="r" id="mac-ram-of"></span></div>
+        <div class="num"><span id="mac-ram-value"></span><small>%</small></div>
+        <svg class="spark" id="mac-ram-spark" aria-hidden="true"></svg>
+      </div>
+      <div class="mac-card mac-net" id="mac-net">
+        <div class="row"><i class="dot"></i><span id="mac-net-label"></span> ↓<span class="r"><i class="dot up"></i>↑ <span id="mac-up"></span></span></div>
+        <div class="num"><span id="mac-down-value"></span><small id="mac-down-unit"></small></div>
+        <svg class="spark" id="mac-net-spark" aria-hidden="true"></svg>
+      </div>
+    </div>
+    <div class="mac-smalls">
+      <div class="mac-card mac-small mac-disk" id="mac-disk">
+        <div class="row"><i class="dot"></i><span id="mac-disk-label"></span></div>
+        <b id="mac-disk-free"></b>
+        <div class="bar"><div class="fill" id="mac-disk-fill"></div></div>
+        <em id="mac-disk-of"></em>
+      </div>
+      <div class="mac-card mac-small mac-battery" id="mac-battery">
+        <div class="row"><i class="dot"></i><span id="mac-battery-label"></span></div>
+        <b id="mac-battery-value"></b>
+        <div class="bar"><div class="fill" id="mac-battery-fill"></div></div>
+        <em id="mac-battery-state"></em>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="panel photo" id="photos">
   <img class="back" id="photo-back" alt="">
   <img class="main" id="photo-main" alt="">

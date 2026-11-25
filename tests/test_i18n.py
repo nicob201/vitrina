@@ -22,6 +22,11 @@ class StringsTest(unittest.TestCase):
         self.assertEqual(es["offline"], "sin conexión")
 
 
+    def test_mac_copy(self):
+        self.assertEqual(STRINGS["es"]["mac_window"], "últimos 5 min")
+        self.assertEqual(STRINGS["es"]["mac_on_battery"], "con batería")
+        self.assertEqual(STRINGS["en"]["mac_disk_free"], "{free} free")
+
 class PickLanguageTest(unittest.TestCase):
     def test_pick_language(self):
         cases = [

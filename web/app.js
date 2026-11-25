@@ -134,6 +134,148 @@ function duration(ms) {
   return h ? t('duration_hm', { h, m }) : t('duration_m', { m });
 }
 
+// ---------- mac ----------
+// The Mac reads and keeps 5 minutes of numbers; the phone asks for them only while this panel is on screen,
+// and does all the drawing.
+const METRICS_MS = 5000;
+const WINDOW_S = 300;
+const NET_FLOOR = 1e6; // the network scale never goes below 1 MB/s, so a quiet network doesn't look busy
+const GIB = 2 ** 30;   // memory in binary GB (24 GB), disk and network in decimal ones, like macOS
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const DASH = '–';
+let metricsTimer = null;
+let lastMetrics = null;
+
+renderers.mac = (s) => {
+  $('mac-name').textContent = s.mac.name;
+  $('mac-window').textContent = t('mac_window');
+  for (const k of ['cpu', 'gpu', 'ram', 'net', 'disk', 'battery']) $(`mac-${k}-label`).textContent = t(`mac_${k}`);
+};
+
+// The charts are drawn in pixels: draw again when one changes size (fonts arriving, a card hiding).
+const sparkSizes = new ResizeObserver(() => lastMetrics && drawMac(lastMetrics));
+for (const k of ['cpu', 'gpu', 'ram', 'net']) sparkSizes.observe($(`mac-${k}-spark`));
+
+function startMetrics() {
+  if (metricsTimer) return; // show('mac') runs again on every /api/state: never a second timer
+  fetchMetrics();
+  metricsTimer = setInterval(fetchMetrics, METRICS_MS);
+}
+
+function stopMetrics() {
+  clearInterval(metricsTimer);
+  metricsTimer = null;
+}
+
+async function fetchMetrics() {
+  const ctl = new AbortController();
+  const timeout = setTimeout(() => ctl.abort(), POLL_TIMEOUT_MS);
+  try {
+    const res = await fetch('/api/metrics', { cache: 'no-store', signal: ctl.signal });
+    if (!res.ok) throw new Error(res.status);
+    lastMetrics = await res.json();
+    drawMac(lastMetrics);
+  } catch (e) {
+    // keep the last drawing, like the rest of the page
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+const fmt = (digits) => new Intl.NumberFormat(lang(), { minimumFractionDigits: digits, maximumFractionDigits: digits });
+
+function rateParts(bytesPerSecond) {
+  if (bytesPerSecond === null) return [DASH, ''];
+  return bytesPerSecond < 1e6 ? [fmt(0).format(bytesPerSecond / 1000), 'KB/s'] : [fmt(1).format(bytesPerSecond / 1e6), 'MB/s'];
+}
+
+function drawMac(m) {
+  const samples = m.samples || [];
+  const latest = (key) => {
+    for (let i = samples.length - 1; i >= 0; i--) if (samples[i][key] != null) return samples[i][key];
+    return null;
+  };
+  const whole = (v) => (v === null ? DASH : fmt(0).format(v));
+  const cpu = latest('cpu');
+  const gpu = latest('gpu');
+  const ram = latest('ram');
+  const down = latest('down');
+  const up = latest('up');
+
+  $('mac-cpu-value').textContent = whole(cpu);
+  $('mac-gpu').hidden = gpu === null; // a Mac that doesn't report it
+  $('mac-gpu-value').textContent = whole(gpu);
+  $('mac-ram-value').textContent = whole(ram === null ? null : (ram / m.ram_total) * 100);
+  $('mac-ram-of').textContent = ram === null ? '' : `${fmt(1).format(ram / GIB)} / ${fmt(0).format(m.ram_total / GIB)} GB`;
+  const [downValue, downUnit] = rateParts(down);
+  $('mac-down-value').textContent = downValue;
+  $('mac-down-unit').textContent = downUnit;
+  $('mac-up').textContent = rateParts(up).join(' ').trim();
+
+  const end = samples.length ? samples[samples.length - 1].t : 0;
+  spark($('mac-cpu-spark'), samples, [{ key: 'cpu', area: true }], 100, end);
+  spark($('mac-gpu-spark'), samples, [{ key: 'gpu', area: true }], 100, end);
+  spark($('mac-ram-spark'), samples, [{ key: 'ram', area: true }], m.ram_total, end);
+  const peak = Math.max(NET_FLOOR, ...samples.map((s) => Math.max(s.down || 0, s.up || 0)));
+  spark($('mac-net-spark'), samples, [{ key: 'up', color: '--up' }, { key: 'down', area: true }], peak * 1.1, end);
+
+  $('mac-disk').hidden = !m.disk;
+  if (m.disk) {
+    const gb = (bytes) => `${fmt(0).format(bytes / 1e9)} GB`;
+    $('mac-disk-free').textContent = t('mac_disk_free', { free: gb(m.disk.free) });
+    $('mac-disk-of').textContent = t('mac_disk_of', { total: gb(m.disk.total) });
+    $('mac-disk-fill').style.setProperty('--v', `${((m.disk.total - m.disk.free) / m.disk.total) * 100}%`);
+  }
+  $('mac-battery').hidden = !m.battery;
+  if (m.battery) {
+    const states = { ac: 'mac_ac', charging: 'mac_charging', battery: 'mac_on_battery' };
+    $('mac-battery-value').textContent = new Intl.NumberFormat(lang(), { style: 'percent' }).format(m.battery.pct / 100);
+    $('mac-battery-state').textContent = t(states[m.battery.state] || 'mac_ac');
+    $('mac-battery-fill').style.setProperty('--v', `${Math.min(m.battery.pct, 100)}%`);
+  }
+}
+
+// One reading's line over the last WINDOW_S seconds, ending at the newest sample (the Mac's clock, so the
+// phone's own clock doesn't matter). A null breaks the line instead of bridging the gap.
+function spark(svg, samples, lines, max, end) {
+  svg.textContent = '';
+  const w = svg.clientWidth;
+  const h = svg.clientHeight;
+  if (!w || !h || !samples.length || !(max > 0)) return;
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  const style = getComputedStyle(svg.parentNode);
+  const ring = style.getPropertyValue('--card').trim();
+  const x = (time) => ((time - (end - WINDOW_S)) / WINDOW_S) * (w - 14); // room on the right for the end dot
+  const y = (v) => h - 2 - Math.min(v / max, 1) * (h - 10);
+  const add = (tag, attrs) => {
+    const el = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    svg.appendChild(el);
+  };
+  for (const { key, color = '--c', area = false } of lines) {
+    const ink = style.getPropertyValue(color).trim();
+    const runs = [[]];
+    for (const s of samples) {
+      if (s[key] == null) {
+        if (runs[runs.length - 1].length) runs.push([]);
+      } else {
+        runs[runs.length - 1].push([x(s.t), y(s[key])]);
+      }
+    }
+    for (const run of runs) {
+      if (!run.length) continue;
+      const d = 'M' + run.map(([a, b]) => `${a.toFixed(1)},${b.toFixed(1)}`).join('L');
+      if (area) add('path', { d: `${d}L${run[run.length - 1][0].toFixed(1)},${h}L${run[0][0].toFixed(1)},${h}Z`, fill: ink, 'fill-opacity': 0.16 });
+      add('path', { d, fill: 'none', stroke: ink, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' });
+    }
+    const last = runs.filter((r) => r.length).pop();
+    if (last) {
+      const [cx, cy] = last[last.length - 1];
+      add('circle', { cx: cx.toFixed(1), cy: cy.toFixed(1), r: 4, fill: ink, stroke: ring, 'stroke-width': 2 });
+    }
+  }
+}
+
 // ---------- photos ----------
 let photoIndex = -1;
 let photoReady = null;
@@ -188,6 +330,8 @@ async function go(id) {
 
 function show(id) {
   current = id;
+  if (id === 'mac') startMetrics();
+  else stopMetrics();
   for (const p of document.querySelectorAll('.panel')) p.classList.toggle('on', p.id === id);
   document.body.dataset.panel = id;
   const k = panels.indexOf(id);
