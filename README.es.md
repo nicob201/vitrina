@@ -139,8 +139,9 @@ computadora y le pregunta a Anthropic tu uso cada 5 minutos:
 Apagado de entrada. Con `"mac": true`, el server lee qué tan ocupada está la Mac: CPU, GPU, memoria y red
 cada 5 segundos, y espacio en disco y batería cada media hora.
 
-- Le pregunta directo a macOS, sin `sudo` ni programas extra: cada lectura tarda mucho menos de un
-  milisegundo.
+- La lectura de cada 5 segundos le pregunta directo a macOS, sin `sudo` y sin abrir ningún programa: cada una
+  tarda mucho menos de un milisegundo. Solo se corren `pmset` (batería, cada media hora) y `scutil` (el nombre
+  de la Mac, una vez).
 - Corre solo mientras vitrina corre (`vitrina stop` la corta) y se pausa si el celu no consultó nada en un
   minuto.
 - La Mac guarda los últimos 5 minutos; el celu los pide solo con el panel en pantalla y hace todo el

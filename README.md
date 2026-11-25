@@ -139,7 +139,8 @@ this computer and asks Anthropic for your usage every 5 minutes:
 Off by default. With `"mac": true`, the server reads how busy the Mac is: CPU, GPU, memory and network every
 5 seconds, and disk space and battery every half hour.
 
-- It asks macOS directly, with no `sudo` and no extra programs: each reading takes well under a millisecond.
+- The 5-second reading asks macOS directly, with no `sudo` and without starting any program: each one takes
+  well under a millisecond. Only `pmset` (battery, every half hour) and `scutil` (the Mac's name, once) are run.
 - It runs only while vitrina runs (`vitrina stop` ends it), and pauses when the phone hasn't asked for
   anything for a minute.
 - The Mac keeps the last 5 minutes; the phone asks for them only while the panel is on screen and does all
