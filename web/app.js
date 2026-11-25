@@ -186,7 +186,8 @@ const fmt = (digits) => new Intl.NumberFormat(lang(), { minimumFractionDigits: d
 
 function rateParts(bytesPerSecond) {
   if (bytesPerSecond === null) return [DASH, ''];
-  return bytesPerSecond < 1e6 ? [fmt(0).format(bytesPerSecond / 1000), 'KB/s'] : [fmt(1).format(bytesPerSecond / 1e6), 'MB/s'];
+  const kb = Math.round(bytesPerSecond / 1000); // switch units after rounding: never "1000 KB/s"
+  return kb < 1000 ? [fmt(0).format(kb), 'KB/s'] : [fmt(1).format(bytesPerSecond / 1e6), 'MB/s'];
 }
 
 function drawMac(m) {
