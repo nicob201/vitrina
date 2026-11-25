@@ -137,14 +137,14 @@ def read_gpu() -> float | None:
     return best
 
 
-def read_net() -> tuple[int, int]:
-    """Bytes received and sent since boot (32-bit counters) on Wi-Fi and Ethernet. Only en* interfaces:
-    a VPN's traffic also crosses en0, and counting its tunnel too would count it twice."""
+def read_net() -> dict[str, tuple[int, int]]:
+    """Bytes received and sent since boot (32-bit counters) per Wi-Fi and Ethernet interface. Only en*
+    interfaces: a VPN's traffic also crosses en0, and counting its tunnel too would count it twice."""
     lib = _libc()
     head = POINTER(_IfAddrs)()
     if lib.getifaddrs(byref(head)) != 0:
         raise OSError("getifaddrs failed")
-    received = sent = 0
+    counts: dict[str, tuple[int, int]] = {}
     try:
         entry = head
         while entry:
@@ -152,12 +152,11 @@ def read_net() -> tuple[int, int]:
             if (item.addr and item.addr.contents.family == _AF_LINK and item.data
                     and item.name and item.name.startswith(b"en")):
                 counters = (c_uint32 * 2).from_address(item.data + _IF_BYTES)
-                received += counters[0]
-                sent += counters[1]
+                counts[item.name.decode("ascii", "replace")] = (counters[0], counters[1])
             entry = item.next
     finally:
         lib.freeifaddrs(head)
-    return received, sent
+    return counts
 
 
 def ram_total() -> int:

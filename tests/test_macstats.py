@@ -53,8 +53,9 @@ class RealReadersTest(unittest.TestCase):
         self.assertTrue(0 < read_memory_used() < ram_total())
         gpu = read_gpu()
         self.assertTrue(gpu is None or 0 <= gpu <= 100, gpu)
-        rx, tx = read_net()
-        self.assertTrue(rx >= 0 and tx >= 0)
+        net = read_net()
+        self.assertTrue(all(name.startswith("en") for name in net), net)
+        self.assertTrue(all(rx >= 0 and tx >= 0 for rx, tx in net.values()), net)
         d = read_disk()
         self.assertTrue(0 <= d["free"] <= d["total"])
 

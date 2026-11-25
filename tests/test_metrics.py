@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from vitrina.metrics import Metrics, cpu_percent, memory_used, parse_battery, rate, read_all
+from vitrina.metrics import Metrics, cpu_percent, memory_used, net_rates, parse_battery, read_all
 
 REAL_PMSET = "Now drawing from 'AC Power'\n -InternalBattery-0 (id=23134307)\t80%; AC attached; not charging present: true\n"
 
@@ -16,15 +16,25 @@ class MathTest(unittest.TestCase):
     def test_cpu_percent_without_elapsed_ticks(self):
         self.assertIsNone(cpu_percent((1, 1, 1, 1), (1, 1, 1, 1)))
 
-    def test_rate(self):
-        self.assertEqual(rate(1000, 6000, 5), 1000)
+    def test_net_rates_add_up_every_interface(self):
+        prev = {"en0": (1000, 2000), "en1": (0, 0)}
+        cur = {"en0": (6000, 2500), "en1": (5000, 0)}
+        self.assertEqual(net_rates(prev, cur, 5), (2000, 100))
 
-    def test_rate_wraps(self):
-        self.assertEqual(rate(2**32 - 1000, 4000, 5), 1000)
+    def test_net_rates_wrap(self):
+        self.assertEqual(net_rates({"en0": (2**32 - 1000, 0)}, {"en0": (4000, 0)}, 5), (1000, 0))
 
-    def test_rate_without_elapsed_time(self):
-        self.assertIsNone(rate(1, 2, 0))
-        self.assertIsNone(rate(1, 2, -5))
+    def test_net_rates_without_elapsed_time(self):
+        self.assertEqual(net_rates({"en0": (1, 1)}, {"en0": (2, 2)}, 0), (None, None))
+        self.assertEqual(net_rates({"en0": (1, 1)}, {"en0": (2, 2)}, -5), (None, None))
+
+    def test_interface_going_away_is_not_a_spike(self):  # unplugging a dock or a USB adapter
+        prev = {"en0": (3_000_000_000, 0), "en5": (100_000_000, 0)}
+        self.assertEqual(net_rates(prev, {"en0": (3_000_005_000, 0)}, 5), (1000, 0))
+
+    def test_interface_appearing_is_not_a_spike(self):
+        cur = {"en0": (3_000_005_000, 0), "en5": (100_000_000, 0)}
+        self.assertEqual(net_rates({"en0": (3_000_000_000, 0)}, cur, 5), (1000, 0))
 
     def test_memory_used(self):
         self.assertEqual(memory_used(600_000, 50_000, 200_000, 100_000, 16384), 13_926_400_000)
@@ -91,7 +101,7 @@ class MetricsTest(unittest.TestCase):
         k = self.reads
         self.reads += 1
         return {"cpu": (100 + 30 * k, 50 + 10 * k, 850 + 50 * k, 10 * k), "ram": 12_000_000_000, "gpu": 6.0,
-                "net": (1000 + 5000 * k, 2000 + 500 * k)}
+                "net": {"en0": (1000 + 5000 * k, 2000 + 500 * k)}}
 
     def metrics(self):
         return Metrics(self.read, 24 * 2**30, clock=lambda: self.now[0])

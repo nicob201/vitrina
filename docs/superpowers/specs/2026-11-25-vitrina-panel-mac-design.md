@@ -143,7 +143,7 @@ Lecturas cada 5 s, sin abrir programas (código ya probado en `spike/panel-mac/`
 | CPU % | `host_statistics(HOST_CPU_LOAD_INFO)` → ticks user/system/idle/nice; % = Δ(user+system+nice) / Δ(total) | 0,002 ms junto con memoria |
 | Memoria usada | `host_statistics64(HOST_VM_INFO64)`; usada = (internal − purgeable + wired + compressor) × tamaño de página, como "Memoria usada" del Monitor de Actividad. Total: `os.sysconf("SC_PHYS_PAGES") × os.sysconf("SC_PAGESIZE")` | (idem) |
 | GPU % | IOKit: servicio `IOAccelerator` → propiedad `PerformanceStatistics` → `"Device Utilization %"` (sin `sudo`; probado en M4). Si hay varias, la mayor | 0,021 ms |
-| Red | `getifaddrs`, entradas `AF_LINK` de las interfaces cuyo nombre empieza con `en` (WiFi y Ethernet; así una VPN no se cuenta dos veces); bytes de `if_data` (offsets 40 y 44) | 0,063 ms |
+| Red | `getifaddrs`, entradas `AF_LINK` de las interfaces cuyo nombre empieza con `en` (WiFi y Ethernet; así una VPN no se cuenta dos veces); bytes de `if_data` (offsets 40 y 44). La velocidad suma la diferencia **de cada interfaz** presente en las dos lecturas: una que aparece o desaparece (un dock, un adaptador USB) no cuenta, en vez de parecer un salto de 4 GB | 0,063 ms |
 
 Cada 30 min (y al arrancar):
 

@@ -21,9 +21,17 @@ def cpu_percent(prev: tuple[int, int, int, int], cur: tuple[int, int, int, int])
     return (user + system + nice) / total * 100 if total else None
 
 
-def rate(prev: int, cur: int, seconds: float) -> int | None:
-    """Bytes per second between two readings of a 32-bit counter."""
-    return round((cur - prev) % _WRAP / seconds) if seconds > 0 else None
+def net_rates(prev: dict[str, tuple[int, int]], cur: dict[str, tuple[int, int]],
+              seconds: float) -> tuple[int | None, int | None]:
+    """Bytes per second received and sent, adding up each interface's own difference. An interface that
+    appears or goes away between two readings (a dock, a USB adapter) is left out: a drop in a grand total
+    would otherwise wrap around and look like 4 GB."""
+    if seconds <= 0:
+        return None, None
+    both = prev.keys() & cur.keys()
+    received = sum((cur[n][0] - prev[n][0]) % _WRAP for n in both)
+    sent = sum((cur[n][1] - prev[n][1]) % _WRAP for n in both)
+    return round(received / seconds), round(sent / seconds)
 
 
 def memory_used(internal: int, purgeable: int, wired: int, compressor: int, page_size: int) -> int:
@@ -98,9 +106,7 @@ class Metrics:
                 if before["cpu"] is not None and raw["cpu"] is not None:
                     sample["cpu"] = _round(cpu_percent(before["cpu"], raw["cpu"]))
                 if before["net"] is not None and raw["net"] is not None:
-                    seconds = now - prev[0]
-                    sample["down"] = rate(before["net"][0], raw["net"][0], seconds)
-                    sample["up"] = rate(before["net"][1], raw["net"][1], seconds)
+                    sample["down"], sample["up"] = net_rates(before["net"], raw["net"], now - prev[0])
             self._prev = (now, raw)
             self._samples.append(sample)
             self._samples = [s for s in self._samples if s["t"] > now - WINDOW]
