@@ -1,5 +1,5 @@
 // Injected into dist/demo/index.html before app.js. The demo is the real page (web/), but there is no server:
-// this answers /api/state in the browser, with sample data that is always relative to the visitor's "now".
+// this answers /api/state and /api/metrics in the browser, with sample data that is always relative to the visitor's "now".
 (() => {
   const DAY = 86400000;
   const HOUR = 3600000;
@@ -100,11 +100,42 @@
       },
     });
     announceReady();
-    return new Response(JSON.stringify(state), { headers: { 'Content-Type': 'application/json' } });
+    return json(state);
   }
+
+  // The shape of vitrina/metrics.py::Metrics.body, with made-up curves. Each sample depends only on its own
+  // time, so the history scrolls to the left on every request, like a real one.
+  function demoMetrics(now) {
+    const GIB = 2 ** 30;
+    const last = Math.floor(now / 5000) * 5;
+    const samples = [];
+    for (let t = last - 295; t <= last; t += 5) {
+      const wave = (period, shift) => (Math.sin((t / period) * 2 * Math.PI + shift) + 1) / 2; // 0..1
+      const burst = wave(140, 1) ** 6; // now and then something gets busy
+      samples.push({
+        t,
+        cpu: round(12 + 14 * wave(47, 0) + 8 * wave(19, 2) + 40 * burst),
+        gpu: round(4 + 9 * wave(71, 3) + 25 * burst),
+        ram: round((13.4 + 1.2 * wave(260, 0) + 0.2 * wave(33, 1)) * GIB),
+        down: round(1e5 + 5e5 * wave(29, 4) + 3.5e6 * wave(110, 2) ** 8),
+        up: round(2e4 + 9e4 * wave(37, 5) + 4e5 * burst),
+      });
+    }
+    return {
+      interval: 5,
+      samples,
+      ram_total: 24 * GIB,
+      disk: { free: 302e9, total: 494e9 },
+      battery: { pct: 80, state: 'ac' },
+    };
+  }
+
+  const json = (body) => new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } });
 
   window.fetch = (input, init) => {
     const url = new URL(typeof input === 'string' ? input : input.url, location.href);
-    return url.pathname === '/api/state' ? demoState() : realFetch(input, init);
+    if (url.pathname === '/api/state') return demoState();
+    if (url.pathname === '/api/metrics') return Promise.resolve(json(demoMetrics(Date.now())));
+    return realFetch(input, init);
   };
 })();

@@ -6,11 +6,13 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from datetime import date, datetime, timezone
 from pathlib import Path
 
 from vitrina.i18n import STRINGS
+from vitrina.metrics import INTERVAL, WINDOW, Metrics
 
 ROOT = Path(__file__).resolve().parent.parent
 _spec = importlib.util.spec_from_file_location("website_build", ROOT / "website" / "build.py")
@@ -77,10 +79,11 @@ class WebsiteBuildTest(unittest.TestCase):
         self.assertEqual(days[-1].date, today)
         self.assertEqual((days[10].level, days[10].count), tuple(pairs[10]))
 
-    def test_demo_state_has_four_panels_and_real_strings(self):
+    def test_demo_state_has_five_panels_and_real_strings(self):
         for lang in ("es", "en"):
             state = wb.demo_state(ROOT, lang, NOW)
-            self.assertEqual(state["panels"], ["clock", "github", "claude", "photos"])
+            self.assertEqual(state["panels"], ["clock", "github", "claude", "mac", "photos"])
+            self.assertEqual(state["mac"], {"name": {"es": "Mi Mac", "en": "My Mac"}[lang]})
             self.assertEqual(state["strings"], STRINGS[lang])
             self.assertEqual(state["lang"], lang)
             self.assertEqual(state["link"], "wifi")
@@ -217,7 +220,7 @@ class WebsiteBuildTest(unittest.TestCase):
     def test_demo_iframes_are_not_tab_stops(self):
         html, _ = self.page()
         tags = re.findall(r"<iframe\b[^>]*>", html)
-        self.assertEqual(len(tags), 5)
+        self.assertEqual(len(tags), 6)
         for tag in tags:
             self.assertIn('tabindex="-1"', tag)
 
@@ -252,6 +255,42 @@ class WebsiteBuildTest(unittest.TestCase):
         for path in (ROOT / "website" / "site.js", ROOT / "website" / "demo-shim.js", ROOT / "web" / "app.js"):
             r = subprocess.run(["node", "--check", str(path)], capture_output=True, text=True)
             self.assertEqual(r.returncode, 0, f"{path.name}\n{r.stderr}")
+
+
+    @unittest.skipUnless(shutil.which("node"), "node is not installed")
+    def test_demo_metrics_look_like_the_real_ones(self):
+        # Runs the shim as the browser would and compares it with what the Mac itself answers.
+        script = (
+            "globalThis.window = { fetch: () => { throw new Error('went to the network'); } };"
+            "window.parent = window;"
+            "globalThis.location = new URL('https://example.test/demo/?panel=mac');"
+            "require(process.argv[1]);"
+            "window.fetch('/api/metrics').then((r) => r.json()).then((m) => console.log(JSON.stringify(m)));"
+        )
+        r = subprocess.run(["node", "-e", script, str(ROOT / "website" / "demo-shim.js")],
+                           capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        demo = json.loads(r.stdout)
+
+        raw = {"cpu": (1, 1, 1, 1), "gpu": 1, "ram": 1, "net": {"en0": (1, 1)}}
+        real = Metrics(lambda: raw, ram_total=2, clock=lambda: 1000.0)
+        real.tick()
+        real.set_slow({"free": 1, "total": 2}, {"pct": 1, "state": "ac"})
+        real = real.body()
+
+        self.assertEqual(demo.keys(), real.keys())
+        self.assertEqual(demo["disk"].keys(), real["disk"].keys())
+        self.assertEqual(demo["battery"].keys(), real["battery"].keys())
+        samples = demo["samples"]
+        self.assertEqual(len(samples), WINDOW // INTERVAL)
+        self.assertEqual({b["t"] - a["t"] for a, b in zip(samples, samples[1:])}, {INTERVAL})
+        self.assertLess(abs(samples[-1]["t"] - time.time()), 2 * INTERVAL)
+        for s in samples:
+            self.assertEqual(s.keys(), real["samples"][0].keys())
+            self.assertTrue(0 <= s["cpu"] <= 100 and 0 <= s["gpu"] <= 100, s)
+            self.assertTrue(0 < s["ram"] < demo["ram_total"], s)
+            self.assertTrue(s["down"] >= 0 and s["up"] >= 0, s)
+        self.assertGreater(len({s["cpu"] for s in samples}), 10)  # a flat line would look broken
 
 
 if __name__ == "__main__":

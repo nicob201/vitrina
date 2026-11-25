@@ -60,6 +60,7 @@ h1, h2, h3 { text-wrap: balance; }
 /* panels: 2x2 */
 .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px 48px; margin-top: 56px; }
 .item { --s: .5; }
+.item[data-panel="photos"] { grid-column: 1 / -1; justify-self: center; width: calc(50% - 24px); max-width: 456px; } /* fifth panel: alone in its row; 456px = its framed screen, so it looks centered */
 .item .screen { box-shadow: 0 0 0 calc(10px * var(--s)) #0a0d1d, 0 0 0 calc(11px * var(--s)) rgba(255,255,255,.09), 0 28px 60px rgba(0,0,0,.45); margin-left: calc(11px * var(--s)); }
 .item iframe { pointer-events: none; }
 .item h3 { font: 700 30px/1 var(--display); margin-top: 26px; }
@@ -116,6 +117,7 @@ footer nav { display: flex; gap: 22px; flex-wrap: wrap; align-self: flex-start; 
   .closing h2 { font-size: 42px; }
   .grid, .install, .sec { grid-template-columns: minmax(0, 1fr); }
   .grid { gap: 40px; }
+  .item[data-panel="photos"] { width: auto; max-width: none; justify-self: stretch; }
   .install, .sec { gap: 40px; }
   .note { padding-left: 0; }
   footer { padding: 28px 16px 32px; }

@@ -64,8 +64,9 @@ def demo_state(repo: Path, lang: str, now: datetime) -> dict:
         "session": {"pct": 42.0, "resets_at": now + timedelta(hours=2, minutes=14)},
         "week": {"pct": 51.0, "resets_at": now + timedelta(days=3, hours=5)},
     })
-    state = build_state(store, Config(github_user="demo", claude=True), lang, "wifi", now, len(PHOTOS))
-    # The shim recomputes "github" and "claude" in the browser; the rest is final.
+    store.set("mac", {"name": "Mi Mac" if lang == "es" else "My Mac"})
+    state = build_state(store, Config(github_user="demo", claude=True, mac=True), lang, "wifi", now, len(PHOTOS))
+    # The shim recomputes "github" and "claude" in the browser, and answers /api/metrics; the rest is final.
     state["photos"] = ["photos/" + name for name in PHOTOS]
     return state
 

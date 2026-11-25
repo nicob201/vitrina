@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#1A2142">
 <title>vitrina — tu celu viejo, ahora una pantalla de escritorio</title>
-<meta name="description" content="Convertí un Android viejo en una mini pantalla de escritorio con la hora, el clima, tu actividad en GitHub, el uso de Claude y tus fotos. Gratis y open source.">
+<meta name="description" content="Convertí un Android viejo en una mini pantalla de escritorio con la hora, el clima, tu actividad en GitHub, el uso de Claude, el estado de tu Mac y tus fotos. Gratis y open source.">
 <link rel="canonical" href="__SITE_URL__/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="__SITE_URL__/">
 <meta property="og:title" content="vitrina — tu celu viejo, ahora una pantalla de escritorio">
-<meta property="og:description" content="Convertí un Android viejo en una mini pantalla de escritorio con la hora, el clima, tu actividad en GitHub, el uso de Claude y tus fotos. Gratis y open source.">
+<meta property="og:description" content="Convertí un Android viejo en una mini pantalla de escritorio con la hora, el clima, tu actividad en GitHub, el uso de Claude, el estado de tu Mac y tus fotos. Gratis y open source.">
 <meta property="og:image" content="__SITE_URL__/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -34,7 +34,7 @@
   <section class="hero">
     <p class="eyebrow" data-i="hero.eyebrow">Gratis y open source · v__VERSION__</p>
     <h1 data-i="hero.title">Tu celu viejo, ahora una pantalla de escritorio</h1>
-    <p class="lede" data-i="hero.lede">La hora y el clima, tu actividad en GitHub, el uso de Claude y tus fotos, rotando en un Android que tenías en un cajón. Tu Mac junta los datos; sin cuentas ni nube.</p>
+    <p class="lede" data-i="hero.lede">La hora y el clima, tu actividad en GitHub, el uso de Claude, cómo anda tu Mac y tus fotos, rotando en un Android que tenías en un cajón. Tu Mac junta los datos; sin cuentas ni nube.</p>
     <div class="ctas">
       <a class="btn primary" href="#instalacion" data-i="hero.cta1">Instalala</a>
       <a class="btn ghost" href="https://github.com/nicob201/vitrina" rel="noopener noreferrer" data-i="hero.cta2">Ver en GitHub</a>
@@ -48,7 +48,7 @@
   </section>
 
   <section class="band" id="como-se-ve"><div class="wrap">
-    <h2 class="title" data-i="panels.title">Cuatro paneles, uno por vez</h2>
+    <h2 class="title" data-i="panels.title">Cinco paneles, uno por vez</h2>
     <p class="sub" data-i="panels.sub">Rotan solos, cada 15 segundos por defecto. Un panel sin nada para mostrar queda afuera.</p>
     <div class="grid">
       <figure class="item" data-box data-panel="clock">
@@ -62,6 +62,10 @@
       <figure class="item" data-box data-panel="claude">
         <div class="screen" role="img" aria-label="El uso de Claude: vista en vivo con datos de ejemplo" data-max="0.5" data-frame="912"><iframe data-src="demo/?panel=claude" loading="lazy" inert tabindex="-1" title="El uso de Claude"></iframe></div>
         <figcaption><h3 data-i="panels.claude.t">El uso de Claude</h3><p data-i="panels.claude.d">Sesión actual y límite semanal, con marca de ritmo. Opcional, viene apagado.</p></figcaption>
+      </figure>
+      <figure class="item" data-box data-panel="mac">
+        <div class="screen" role="img" aria-label="Tu Mac: vista en vivo con datos de ejemplo" data-max="0.5" data-frame="912"><iframe data-src="demo/?panel=mac" loading="lazy" inert tabindex="-1" title="Tu Mac"></iframe></div>
+        <figcaption><h3 data-i="panels.mac.t">Tu Mac</h3><p data-i="panels.mac.d">CPU, GPU, memoria y red de los últimos 5 minutos, más disco y batería. Opcional, viene apagado.</p></figcaption>
       </figure>
       <figure class="item" data-box data-panel="photos">
         <div class="screen" role="img" aria-label="Tus fotos: vista en vivo con datos de ejemplo" data-max="0.5" data-frame="912"><iframe data-src="demo/?panel=photos" loading="lazy" inert tabindex="-1" title="Tus fotos"></iframe></div>
@@ -92,7 +96,7 @@ echo 'export PATH="$HOME/.local/bin:$PATH"' &gt;&gt; ~/.zshrc</pre></div>
         </li>
         <li>
           <h3 data-i="step2.t">Completá la configuración</h3>
-          <p data-i="step2.d">Corré <code>vitrina</code> una vez: crea <code>config.json</code> y avisa que falta emparejar. Poné tu usuario de GitHub, tu ciudad y la carpeta de fotos.</p>
+          <p data-i="step2.d">Corré <code>vitrina</code> una vez: crea <code>config.json</code> y avisa que falta emparejar. Poné tu usuario de GitHub, tu ciudad y la carpeta de fotos. El panel de tu Mac se activa con <code>"mac": true</code>.</p>
         </li>
         <li>
           <h3 data-i="step3.t">Instalá la app en el celu</h3>
