@@ -47,6 +47,10 @@ def build_state(
     if config.claude and usage and (usage.get("session") or usage.get("week")):
         _add(state, "claude", lambda: claude_view(usage, now))
 
+    mac = store.get("mac")
+    if config.mac and mac:
+        _add(state, "mac", lambda: {"name": mac["name"]})
+
     if photo_count:
         state["panels"].append("photos")
         state["photos"] = [f"/api/photo/{i}" for i in range(photo_count)]

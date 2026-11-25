@@ -8,6 +8,7 @@ full screen, rotating through panels:
 - **Clock** with the date and the weather
 - **GitHub activity**: the contribution squares, your streak and today's count
 - **Claude usage**: current session and weekly limits, with a pace mark (optional)
+- **Mac**: CPU, GPU, memory and network over the last 5 minutes, plus disk and battery (optional)
 - **Photos** from a folder on your computer
 
 Free and open source. No accounts, no cloud. The phone runs a small vitrina app that only talks to your
@@ -96,6 +97,7 @@ runs when you start it.
 | `seconds_per_panel` | `15` | How long each panel stays on screen (5 or more) |
 | `github_user` | `""` | Your GitHub username. Empty = no GitHub panel |
 | `claude` | `false` | `true` turns on the Claude usage panel (see below) |
+| `mac` | `false` | `true` turns on the Mac panel (see below) |
 | `city` | `""` | City for the weather. Empty = no weather |
 | `country` | `""` | Optional two-letter country code to pick the right city, e.g. `"AR"` |
 | `units` | `"celsius"` | `"celsius"` or `"fahrenheit"` |
@@ -131,6 +133,19 @@ this computer and asks Anthropic for your usage every 5 minutes:
   out). Only percentages and reset times go to the phone.
 - It uses the same **undocumented** endpoint as Claude Code's `/usage`. It may stop working at any
   time; if it does, the panel just disappears.
+
+## The Mac panel
+
+Off by default. With `"mac": true`, the server reads how busy the Mac is: CPU, GPU, memory and network every
+5 seconds, and disk space and battery every half hour.
+
+- The 5-second reading asks macOS directly, with no `sudo` and without starting any program: each one takes
+  well under a millisecond. Only `pmset` (battery, every half hour) and `scutil` (the Mac's name, once) are run.
+- It runs only while vitrina runs (`vitrina stop` ends it), and pauses when the phone hasn't asked for
+  anything for a minute.
+- The Mac keeps the last 5 minutes; the phone asks for them only while the panel is on screen and does all
+  the drawing. What reaches the phone is percentages, speeds, disk space, battery and the Mac's name: no
+  process or file names.
 
 ## Security
 

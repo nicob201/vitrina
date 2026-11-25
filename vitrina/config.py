@@ -15,6 +15,7 @@ class Config:
     seconds_per_panel: int = 15
     github_user: str = ""
     claude: bool = False
+    mac: bool = False
     city: str = ""
     country: str = ""
     units: str = "celsius"

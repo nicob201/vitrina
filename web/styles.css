@@ -139,6 +139,42 @@ body[data-panel="claude"] .progress span i { background: var(--claude-mist); }
 .note { margin-top: 2.6vh; font-size: 3.8vh; color: var(--mist); line-height: 1.35; min-height: 1.35em; }
 .note .tick { display: inline-block; width: 2px; height: .9em; margin-right: .5em; vertical-align: -.1em; background: var(--moon); }
 
+/* ---------- mac: a darker night, every reading in its own card and color ---------- */
+.mac { background: #0D1126; --card: #1A2142; }
+.mac h2 .window { font-weight: 400; color: var(--mist); }
+.mac h2 .window::before { content: "· "; }
+.mac-grid { flex: 1; margin-top: 4vh; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+/* A hidden card (no GPU, no battery) simply leaves the row to the others. */
+.mac-big { flex: 1; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 10px; min-height: 0; }
+.mac-smalls { display: flex; gap: 10px; }
+.mac-card {
+  display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+  padding: 2.8vh 1.5vw 0; border-radius: 14px;
+  /* rgba() rather than color-mix(): it works on any web view the phone may have */
+  border: 1px solid rgba(var(--rgb), .28);
+  background-color: var(--card);
+  background-image: linear-gradient(180deg, transparent 30%, rgba(var(--rgb), .16));
+}
+.mac-card .row { display: flex; align-items: center; gap: .45em; font-size: 3.7vh; color: var(--mist); white-space: nowrap; }
+.mac-card .row .r { margin-left: auto; display: flex; align-items: center; gap: .4em; font-size: 3.3vh; }
+.mac-card .dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.mac-card .dot.up { background: var(--up); }
+.mac-card .num { margin-top: 1.4vh; font-family: var(--display); font-weight: 700; font-size: 13vh; line-height: .85; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mac-card .num small { margin-left: .08em; font-size: .42em; font-weight: 500; color: var(--mist); }
+.mac-card .spark { display: block; flex: 1; min-height: 0; width: calc(100% + 3vw); margin: 1.2vh -1.5vw 0; }
+.mac-small { flex: 1; flex-direction: row; align-items: center; gap: 1.2vw; height: 11.5vh; padding: 0 1.5vw; background-image: linear-gradient(rgba(var(--rgb), .09), rgba(var(--rgb), .09)); }
+.mac-small .row { flex: none; }
+.mac-small b { font-size: 3.7vh; font-weight: 600; white-space: nowrap; }
+.mac-small em { font-size: 3.3vh; font-style: normal; color: var(--mist); white-space: nowrap; }
+.mac-small .bar { flex: 1; height: 8px; border-radius: 4px; background: rgba(var(--rgb), .18); }
+.mac-small .fill { width: var(--v, 0%); height: 100%; border-radius: 4px; background: var(--c); }
+.mac-cpu { --c: #338ced; --rgb: 51, 140, 237; }
+.mac-gpu { --c: #e76624; --rgb: 231, 102, 36; }
+.mac-ram { --c: #00a888; --rgb: 0, 168, 136; }
+.mac-net { --c: #d28e05; --rgb: 210, 142, 5; --up: #e24d8b; }
+.mac-disk { --c: #0aac23; --rgb: 10, 172, 35; }
+.mac-battery { --c: #9887ef; --rgb: 152, 135, 239; }
+
 /* ---------- photos ---------- */
 .photo { padding: 0; overflow: hidden; }
 .photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }

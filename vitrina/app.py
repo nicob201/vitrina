@@ -14,6 +14,7 @@ from .github import contributions_url, parse_contributions
 from .handler import make_server, tls_context
 from .i18n import pick_language
 from .loops import run_every
+from .metrics import INTERVAL, SLOW, Metrics, read_all
 from .pairing import SECRETS_DIR, PairingError, pair, read_secret
 from .photos import PhotoLibrary
 from .state import Store, build_state
@@ -76,9 +77,28 @@ def main(argv: list[str] | None = None, root: Path = ROOT, secrets_dir: Path = S
     # A relative folder is beside config.json, whatever folder the server was started from.
     photos = PhotoLibrary(root / Path(cfg.photos_dir).expanduser() if cfg.photos_dir else None)
 
+    metrics, mac_name = None, "Mac"
+    if cfg.mac:
+        if sys.platform != "darwin":
+            log("The Mac panel only works on macOS.")
+        else:
+            from . import macstats  # loads macOS-only libraries on first use
+
+            failing: set[str] = set()
+            metrics = Metrics(lambda: read_all(macstats.READERS, log, failing), macstats.ram_total())
+            mac_name = macstats.computer_name()
+
     def get_state(accept_language: str | None, link: str) -> dict:
+        if metrics is not None:
+            metrics.seen()  # every keyed request: the phone is there, keep reading
         lang = pick_language(cfg.language, accept_language)
         return build_state(store, cfg, lang, link, datetime.now().astimezone(), photos.count())
+
+    def get_metrics() -> dict | None:
+        if metrics is None:
+            return None
+        metrics.seen()
+        return metrics.body()
 
     # Bind first: if the port is taken, say so before anything else starts.
     # macOS lets us bind 0.0.0.0 next to another app's 127.0.0.1 on the same port, so check that too.
@@ -88,14 +108,14 @@ def main(argv: list[str] | None = None, root: Path = ROOT, secrets_dir: Path = S
         return 1
     try:
         server = make_server("0.0.0.0" if cfg.wifi else "127.0.0.1", cfg.port, root / "web", get_state, photos.path,
-                             tls=tls, secret=secret)
+                             tls=tls, secret=secret, get_metrics=get_metrics)
     except OSError as e:
         log(in_use if e.errno in _PORT_IN_USE else f"Can't use port {cfg.port}: {e.strerror or e}")
         return 1
 
     stop = threading.Event()
     own_adb = not adb.daemon_running()  # if the server opens adb's daemon, it closes it when it stops
-    cable = _start_sources(cfg, store, photos, stop)
+    cable = _start_sources(cfg, store, photos, stop, metrics, mac_name)
 
     def on_long_sleep() -> None:
         # The Mac may wake on another network (a café): don't come back listening there.
@@ -134,7 +154,8 @@ def _answers_on_localhost(port: int) -> bool:
         return False
 
 
-def _start_sources(cfg, store: Store, photos: PhotoLibrary, stop: threading.Event) -> threading.Thread:
+def _start_sources(cfg, store: Store, photos: PhotoLibrary, stop: threading.Event,
+                   metrics: Metrics | None = None, mac_name: str = "Mac") -> threading.Thread:
     """Start every source; returns the cable check's thread."""
     if cfg.github_user:
         def github() -> None:
@@ -162,6 +183,21 @@ def _start_sources(cfg, store: Store, photos: PhotoLibrary, stop: threading.Even
             if place["found"] is not None:
                 store.set("weather", parse_forecast(net.fetch_json(forecast_url(place["found"], cfg.units))))
         run_every(900, weather, "Weather", log, stop)
+
+    if metrics is not None:
+        from . import macstats
+
+        def mac() -> None:
+            metrics.tick()
+            if metrics.ready:
+                store.set("mac", {"name": mac_name})
+        run_every(INTERVAL, mac, "Mac", log, stop)
+
+        failing_slow: set[str] = set()
+
+        def mac_slow() -> None:
+            metrics.set_slow(**read_all(macstats.SLOW_READERS, log, failing_slow))
+        run_every(SLOW, mac_slow, "Mac disk and battery", log, stop)
 
     run_every(60, photos.rescan, "Photos", log, stop)
 

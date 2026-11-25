@@ -69,6 +69,19 @@ class BuildStateTest(unittest.TestCase):
         self.assertEqual(s["panels"], ["clock", "claude"])
         self.assertIsNone(s["clock"]["weather"])
 
+    def test_mac_panel_goes_after_claude(self):
+        store = full_store()
+        store.set("mac", {"name": "MacBook Air de Nico"})
+        s = build_state(store, Config(github_user="x", claude=True, mac=True), "es", "usb", NOW, 2)
+        self.assertEqual(s["panels"], ["clock", "github", "claude", "mac", "photos"])
+        self.assertEqual(s["mac"], {"name": "MacBook Air de Nico"})
+
+    def test_mac_panel_needs_the_option_and_a_reading(self):
+        store = Store()
+        store.set("mac", {"name": "x"})
+        self.assertNotIn("mac", build_state(store, Config(), "es", "usb", NOW, 0)["panels"])
+        self.assertNotIn("mac", build_state(Store(), Config(mac=True), "es", "usb", NOW, 0)["panels"])
+
     def test_state_is_json_serializable(self):
         json.dumps(build_state(full_store(), FULL, "es", "usb", NOW, 2))
 
