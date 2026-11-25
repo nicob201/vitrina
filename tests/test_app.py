@@ -16,6 +16,7 @@ from unittest import mock
 from tests.tls import make_cert
 from vitrina.app import main
 from vitrina.control import hold_lock, running_pid
+from vitrina.metrics import Metrics
 from vitrina.pairing import PairingError, save_secret
 from vitrina.photos import PhotoLibrary
 
@@ -196,6 +197,21 @@ class PortTest(unittest.TestCase):
         release.assert_called_once_with(port, True)  # vitrina opened adb's daemon, so it closes it
         self.assert_port_free(port)
         self.assertIsNone(running_pid(self.secrets))
+
+    def test_mac_panel_outside_macos_is_reported(self):
+        with mock.patch("vitrina.app.sys.platform", "linux"), mock.patch("vitrina.app.Metrics") as metrics:
+            code, out, *_ = self.serve_until_long_sleep({"port": self.free_port(), "wifi": False, "mac": True})
+        self.assertEqual(code, 0)
+        self.assertIn("The Mac panel only works on macOS.", out)
+        metrics.assert_not_called()
+
+    @unittest.skipUnless(sys.platform == "darwin", "macOS only")
+    def test_mac_panel_starts_on_macos(self):
+        with mock.patch("vitrina.app.Metrics", wraps=Metrics) as metrics:
+            code, out, *_ = self.serve_until_long_sleep({"port": self.free_port(), "wifi": False, "mac": True})
+        self.assertEqual(code, 0)
+        metrics.assert_called_once()
+        self.assertNotIn("Mac panel:", out)  # no reader failed
 
     def test_someone_elses_adb_is_left_running(self):
         # Android Studio or a debugging session opened adb's daemon before vitrina: only undo the reverse.
