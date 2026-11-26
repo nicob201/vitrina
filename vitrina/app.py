@@ -161,7 +161,7 @@ def _start_sources(cfg, store: Store, photos: PhotoLibrary, stop: threading.Even
         def github() -> None:
             html = net.fetch(contributions_url(cfg.github_user)).decode("utf-8")
             store.set("github_days", parse_contributions(html))
-        run_every(1800, github, "GitHub", log, stop)
+        run_every(300, github, "GitHub", log, stop)
 
     if cfg.claude:
         def claude() -> None:

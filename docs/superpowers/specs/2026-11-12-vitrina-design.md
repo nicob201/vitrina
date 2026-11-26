@@ -126,7 +126,7 @@ se registra en consola, se queda el dato anterior y el server sigue. Ninguna fue
 
 | Fuente | De dónde | Cada | Qué calcula el server |
 |---|---|---|---|
-| GitHub | HTML público de `github.com/users/<user>/contributions` (sin token) | 30 min | Las 53 semanas con el nivel 0–4 de cada día (el que trae GitHub), total del año, racha de días seguidos, contribuciones de hoy, etiquetas de meses |
+| GitHub | HTML público de `github.com/users/<user>/contributions` (sin token) | 5 min | Las 53 semanas con el nivel 0–4 de cada día (el que trae GitHub), total del año, racha de días seguidos, contribuciones de hoy, etiquetas de meses |
 | Claude | `GET https://api.anthropic.com/api/oauth/usage`, headers `Authorization: Bearer <token>` y `anthropic-beta: oauth-2025-04-20` | 5 min | Sesión (`five_hour`) y semana (`seven_day`): % de uso y hora de reinicio. Semana: % de la semana transcurrida (marca de ritmo). Si ya pasó `resets_at`, 0 % sin consultar |
 | Clima | Open-Meteo: geocoding una vez, después `forecast` con `current` (temperatura, `weather_code`, `is_day`) y `daily` (máx/mín) | 15 min | Temperatura actual, máx y mín del día, condición (código WMO → una de ~8 categorías con palabra en cada idioma e ícono), día/noche |
 | Fotos | Carpeta de la config (jpg, jpeg, png, webp) | 1 min | Lista en orden mezclado; pasan todas antes de repetir |
